@@ -144,7 +144,6 @@ for (int isamp = 0; isamp < nsamp; isamp++)
 }*/
   double iStart = cpuSecond();
 
-#pragma omp parallel for
   for (int i = 0; i < Iter; i++)
     fftwf_execute(plan);
   double iElaps = cpuSecond() - iStart;
@@ -198,7 +197,6 @@ for (int isamp = 0; isamp < nsamp; isamp++)
 }*/
   double iStart = cpuSecond();
 
-#pragma omp parallel for
   for (int i = 0; i < Iter; i++)
     fftwf_execute(plan);
   double iElaps = cpuSecond() - iStart;
@@ -249,7 +247,6 @@ for (int isamp = 0; isamp < nsamp; isamp++)
 }*/
   double iStart = cpuSecond();
 
-#pragma omp parallel for
   for (int i = 0; i < Iter; i++)
     fftwf_execute(plan);
   double iElaps = cpuSecond() - iStart;
