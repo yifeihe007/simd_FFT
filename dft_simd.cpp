@@ -20,33 +20,47 @@
 
 */
 
-#include <immintrin.h>
 #include <fftw3.h>
-#include <random>
-#include <iostream>
 #include <gtest/gtest.h>
+#include <immintrin.h>
+#include <iostream>
+#include <omp.h>
+#include <random>
+#include <stdlib.h>
+#include <sys/time.h>
+
+double cpuSecond() {
+  struct timeval tp;
+  gettimeofday(&tp, NULL);
+  return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
+}
 
 constexpr int nvec = 8;
-constexpr int nsamp = 60;
-//constexpr int nsamp_align = (nsamp+nvec-1)/nvec * nvec;
-constexpr int nloop = 8192*256;
-
+constexpr int nvec_512 = 16;
+// constexpr int nsamp = 512;
+// constexpr int nsamp_align = (nsamp+nvec-1)/nvec * nvec;
+// constexpr int nloop = 1024;
+constexpr int Iter = 1000;
+/*
 TEST(TestDFT, FFTW_Aligned_One)
 {
-  float* xt = fftwf_alloc_real(nsamp);
-  float* xf = fftwf_alloc_real(2*(nsamp/2 + 1));
+  float *xt = fftwf_alloc_real(nsamp);
+  float *xf = fftwf_alloc_real(2 * (nsamp / 2 + 1));
   std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-  fftwf_plan plan = fftwf_plan_dft_r2c_1d(nsamp, xt, (fftwf_complex*)xf, FFTW_DESTROY_INPUT|FFTW_MEASURE);
-  fftwf_print_plan(plan);
-  std::cout << '\n';
-  for(int isamp=0;isamp<nsamp;isamp++) {
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  fftwf_plan plan = fftwf_plan_dft_r2c_1d(nsamp, xt, (fftwf_complex *)xf,
+FFTW_MEASURE); fftwf_print_plan(plan); std::cout << '\n'; for (int isamp = 0;
+isamp < nsamp; isamp++)
+  {
     xt[isamp] = gen(core);
   }
-  for(int iloop=0; iloop<nloop*nvec; iloop++) {
+  for (int iloop = 0; iloop < nloop * nvec; iloop++)
+  {
     fftwf_execute(plan);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
         std::cout << xf[ifreq] << ' ';
       }
       std::cout << '\n';
@@ -56,53 +70,255 @@ TEST(TestDFT, FFTW_Aligned_One)
   fftwf_free(xf);
   fftwf_free(xt);
 }
-
-TEST(TestDFT, FFTW_MisAligned_One)
+*/
+/*
+TEST(TestDFT, manyFFTW_Aligned_One)
 {
-  float* xt = fftwf_alloc_real(nsamp+1) + 1;
-  float* xf = fftwf_alloc_real(2*(nsamp/2 + 1)+1) + 1;
-  std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-  fftwf_plan plan = fftwf_plan_dft_r2c_1d(nsamp, xt, (fftwf_complex*)xf, FFTW_DESTROY_INPUT|FFTW_MEASURE);
-  fftwf_print_plan(plan);
-  std::cout << '\n';
-  for(int isamp=0;isamp<nsamp;isamp++) {
+
+  for (int i = 0; i < Iter; i++)
+  {
+    float *xt = fftwf_alloc_real((nsamp / 2 + 1) * 2 * nloop * nvec);
+    float *xf = fftwf_alloc_real(2 * (nsamp / 2 + 1) * nloop * nvec);
+    // std::mt19937 core(12345);
+    //std::uniform_real_distribution<float> gen(0.0, 1.0);
+    fftwf_plan plan = fftwf_plan_many_dft_r2c(1, &nsamp, nloop * nvec, xt,
+nullptr, 1, (nsamp / 2 + 1) * 2, (fftwf_complex *)xf, nullptr, 1, nsamp / 2 + 1,
+FFTW_MEASURE);
+    //fftwf_print_plan(plan);
+    std::cout << '\n';
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
     xt[isamp] = gen(core);
   }
-  for(int iloop=0; iloop<nloop*nvec; iloop++) {
+
     fftwf_execute(plan);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+  {
+    std::cout << xf[ifreq] << ' ';
+  }
+  std::cout << '\n';
+
+    fftwf_destroy_plan(plan);
+    fftwf_free(xf);
+    fftwf_free(xt);
+  }
+}
+*/
+TEST(TestDFT, manyc2cFFTW_Aligned_One) {
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  int ompT = omp_get_max_threads();
+
+  /*int num;
+  int k;
+  float **xt = (float **)malloc(6 * sizeof(float *));
+  float **xf = (float **)malloc(6 * sizeof(float *));*/
+  // omp_lock_t writelock;
+
+  // omp_init_lock(&writelock);
+
+  // num = omp_get_max_threads();
+  // k = omp_get_thread_num();
+  // omp_set_lock(&writelock);
+  int fftw_init_threads(void);
+  void fftw_plan_with_nthreads(int ompT);
+
+  float *xt = fftwf_alloc_real((nsamp * 2 + 2) * nloop * nvec);
+  float *xf = fftwf_alloc_real((nsamp * 2 + 2) * nloop * nvec);
+  /* std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);*/
+
+  fftwf_plan plan = fftwf_plan_many_dft(
+      1, &nsamp, nloop, (fftwf_complex *)xt, nullptr, 1, (nsamp + 1),
+      (fftwf_complex *)xf, nullptr, 1, nsamp + 1, FFTW_FORWARD, FFTW_MEASURE);
+  // omp_unset_lock(&writelock);
+  // fftwf_print_plan(plan);
+  /* std::cout << '\n';
+for (int isamp = 0; isamp < nsamp; isamp++)
+{
+  xt[isamp] = gen(core);
+}*/
+  double iStart = cpuSecond();
+
+#pragma omp parallel for
+  for (int i = 0; i < Iter; i++)
+    fftwf_execute(plan);
+  double iElaps = cpuSecond() - iStart;
+  printf("Ec2cFFTW : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+{
+  std::cout << xf[ifreq] << ' ';
+}
+std::cout << '\n';
+*/
+  fftwf_destroy_plan(plan);
+
+  // fftwf_free(xf[k]);
+  // fftwf_free(xt[k]);
+
+  free(xt);
+  free(xf);
+
+  // omp_destroy_lock(&writelock);
+}
+TEST(TestDFT, manyr2cFFTW_Aligned_One) {
+
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  int ompT = omp_get_max_threads();
+  int fftw_init_threads(void);
+  void fftw_plan_with_nthreads(int ompT);
+
+  // omp_lock_t writelock;
+  // omp_init_lock(&writelock);
+
+  float *xt = fftwf_alloc_real((nsamp / 2 + 1) * 2 * nloop * nvec);
+  float *xf = fftwf_alloc_real((nsamp / 2 + 1) * 2 * nloop * nvec);
+  // std::mt19937 core(12345);
+  // std::uniform_real_distribution<float> gen(0.0, 1.0);
+  // omp_set_lock(&writelock);
+  fftwf_plan plan = fftwf_plan_many_dft_r2c(
+      1, &nsamp, nloop, xt, nullptr, 1, (nsamp / 2 + 1) * 2,
+      (fftwf_complex *)xf, nullptr, 1, nsamp / 2 + 1, FFTW_MEASURE);
+  // omp_unset_lock(&writelock);
+  // fftwf_print_plan(plan);
+  /* std::cout << '\n';
+for (int isamp = 0; isamp < nsamp; isamp++)
+{
+  xt[isamp] = gen(core);
+}*/
+  double iStart = cpuSecond();
+
+#pragma omp parallel for
+  for (int i = 0; i < Iter; i++)
+    fftwf_execute(plan);
+  double iElaps = cpuSecond() - iStart;
+  printf("Er2cFFTW : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+{
+  std::cout << xf[ifreq] << ' ';
+}
+std::cout << '\n';
+*/
+  fftwf_destroy_plan(plan);
+  fftwf_free(xf);
+  fftwf_free(xt);
+
+  // omp_destroy_lock(&writelock);
+}
+
+TEST(TestDFT, manyc2rFFTW_Aligned_One) {
+
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  int ompT = omp_get_max_threads();
+  int fftw_init_threads(void);
+  void fftw_plan_with_nthreads(int ompT);
+
+  // omp_lock_t writelock;
+  // omp_init_lock(&writelock);
+
+  float *xt = fftwf_alloc_real((nsamp / 2 + 1) * 2 * nloop * nvec);
+  float *xf = fftwf_alloc_real((nsamp / 2 + 1) * 2 * nloop * nvec);
+  /* std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);*/
+  // omp_set_lock(&writelock);
+  fftwf_plan plan = fftwf_plan_many_dft_c2r(
+      1, &nsamp, nloop, (fftwf_complex *)xt, nullptr, 1, (nsamp / 2 + 1), xf,
+      nullptr, 1, (nsamp / 2 + 1) * 2, FFTW_MEASURE);
+  // omp_unset_lock(&writelock);
+  /* fftwf_print_plan(plan);
+std::cout << '\n';
+for (int isamp = 0; isamp < nsamp; isamp++)
+{
+  xt[isamp] = gen(core);
+}*/
+  double iStart = cpuSecond();
+
+#pragma omp parallel for
+  for (int i = 0; i < Iter; i++)
+    fftwf_execute(plan);
+  double iElaps = cpuSecond() - iStart;
+  printf("Ec2rFFTW : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+{
+  std::cout << xf[ifreq] << ' ';
+}
+std::cout << '\n';
+*/
+  fftwf_destroy_plan(plan);
+  fftwf_free(xf);
+  fftwf_free(xt);
+
+  // omp_destroy_lock(&writelock);
+}
+/*
+TEST(TestDFT, FFTW_MisAligned_One)
+{
+  float *xt = fftwf_alloc_real(nsamp + 1) + 1;
+  float *xf = fftwf_alloc_real(2 * (nsamp / 2 + 1) + 1) + 1;
+  std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  fftwf_plan plan = fftwf_plan_dft_r2c_1d(nsamp, xt, (fftwf_complex *)xf,
+FFTW_MEASURE); fftwf_print_plan(plan); std::cout << '\n'; for (int isamp = 0;
+isamp < nsamp; isamp++)
+  {
+    xt[isamp] = gen(core);
+  }
+  for (int iloop = 0; iloop < nloop * nvec; iloop++)
+  {
+    fftwf_execute(plan);
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
         std::cout << xf[ifreq] << ' ';
       }
       std::cout << '\n';
     }
   }
   fftwf_destroy_plan(plan);
-  fftwf_free(xf-1);
-  fftwf_free(xt-1);
+  fftwf_free(xf - 1);
+  fftwf_free(xt - 1);
 }
 
 TEST(TestDFT, FFTW_Aligned_Eight)
 {
-  float* xt = fftwf_alloc_real(nvec*nsamp);
-  float* xf = fftwf_alloc_real(nvec*2*(nsamp/2 + 1));
+  float *xt = fftwf_alloc_real(nvec * nsamp);
+  float *xf = fftwf_alloc_real(nvec * 2 * (nsamp / 2 + 1));
   std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
   int n = nsamp;
   fftwf_plan plan = fftwf_plan_many_dft_r2c(1, &n, nvec,
-                            (float*)xt, nullptr, 1, nsamp,
-                            (fftwf_complex*)xf, nullptr, 1, nsamp/2 + 1,
-                            FFTW_DESTROY_INPUT|FFTW_MEASURE);
-  fftwf_print_plan(plan);
-  std::cout << '\n';
-  for(int isamp=0;isamp<nsamp*nvec;isamp++) {
+                                            (float *)xt, nullptr, 1, nsamp,
+                                            (fftwf_complex *)xf, nullptr, 1,
+nsamp / 2 + 1, FFTW_MEASURE); fftwf_print_plan(plan); std::cout << '\n'; for
+(int isamp = 0; isamp < nsamp * nvec; isamp++)
+  {
     xt[isamp] = gen(core);
   }
-  for(int iloop=0; iloop<nloop; iloop++) {
+  for (int iloop = 0; iloop < nloop; iloop++)
+  {
     fftwf_execute(plan);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
         std::cout << xf[ifreq] << ' ';
       }
       std::cout << '\n';
@@ -115,27 +331,31 @@ TEST(TestDFT, FFTW_Aligned_Eight)
 
 TEST(TestDFT, FFTW_Aligned_TransposedEight)
 {
-  float* xt = fftwf_alloc_real(nvec*nsamp);
-  float* xf = fftwf_alloc_real(nvec*2*(nsamp/2 + 1));
+  float *xt = fftwf_alloc_real(nvec * nsamp);
+  float *xf = fftwf_alloc_real(nvec * 2 * (nsamp / 2 + 1));
   std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
   int n = nsamp;
   fftwf_plan plan = fftwf_plan_many_dft_r2c(1, &n, nvec,
-                            (float*)xt, nullptr, nvec, 1,
-                            (fftwf_complex*)xf, nullptr, nvec, 1,
-                            FFTW_DESTROY_INPUT|FFTW_MEASURE);
-  fftwf_print_plan(plan);
-  std::cout << '\n';
-  for(int ivec=0;ivec<nvec;ivec++) {
-    for(int isamp=0;isamp<nsamp;isamp++) {
+                                            (float *)xt, nullptr, nvec, 1,
+                                            (fftwf_complex *)xf, nullptr, nvec,
+1, FFTW_MEASURE); fftwf_print_plan(plan); std::cout << '\n'; for (int ivec = 0;
+ivec < nvec; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
       xt[isamp * nvec + ivec] = gen(core);
     }
   }
-  for(int iloop=0; iloop<nloop; iloop++) {
+  for (int iloop = 0; iloop < nloop; iloop++)
+  {
     fftwf_execute(plan);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<(nsamp/2 + 1);ifreq++) {
-        std::cout << xf[2*ifreq*nvec] << ' ' << xf[2*ifreq*nvec+1] << ' ';
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[2 * ifreq * nvec] << ' ' << xf[2 * ifreq * nvec + 1] <<
+' ';
       }
       std::cout << '\n';
     }
@@ -178,145 +398,416 @@ TEST(TestDFT, FFTW_SuperAligned_Eight)
   fftwf_free(xt);
 }
 #endif
-
+*/
 #if defined(__AVX__)
 
 using INT = int;
 using stride = int;
 
-inline __m256 ADD(const __m256& a, const __m256& b) { return _mm256_add_ps(a,b); }
-inline __m256 SUB(const __m256& a, const __m256& b) { return _mm256_sub_ps(a,b); }
-inline __m256 MUL(const __m256& a, const __m256& b) { return _mm256_mul_ps(a,b); }
+inline __m256 ADD(const __m256 &a, const __m256 &b) {
+  return _mm256_add_ps(a, b);
+}
+inline __m256 SUB(const __m256 &a, const __m256 &b) {
+  return _mm256_sub_ps(a, b);
+}
+inline __m256 MUL(const __m256 &a, const __m256 &b) {
+  return _mm256_mul_ps(a, b);
+}
 
-//inline __m256 NEG(const __m256& a) { return _mm256_sub_ps(_mm256_setzero_ps(),a); }
-inline __m256 NEG(const __m256& a) { return _mm256_xor_ps(a, _mm256_set1_ps(-0.0)); }
+// inline __m256 NEG(const __m256& a) { return
+// _mm256_sub_ps(_mm256_setzero_ps(),a); }
+inline __m256 NEG(const __m256 &a) {
+  return _mm256_xor_ps(a, _mm256_set1_ps(-0.0));
+}
 
 #if defined(__FMA__)
-inline __m256 FMA(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_fmadd_ps(a,b,c); }
-inline __m256 FMS(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_fmsub_ps(a,b,c); }
+inline __m256 FMA(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_fmadd_ps(a, b, c);
+}
+inline __m256 FMS(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_fmsub_ps(a, b, c);
+}
 // Note: inconsistency between FFTW and Intel intrinsics definitions of FNMA/S
-inline __m256 FNMA(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_fnmsub_ps(a,b,c); }
-inline __m256 FNMS(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_fnmadd_ps(a,b,c); }
+inline __m256 FNMA(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_fnmsub_ps(a, b, c);
+}
+inline __m256 FNMS(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_fnmadd_ps(a, b, c);
+}
 #else
-inline __m256 FMA(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_add_ps(_mm256_mul_ps(a,b),c); }
-inline __m256 FMS(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_sub_ps(_mm256_mul_ps(a,b),c); }
-inline __m256 FNMA(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_sub_ps(NEG(_mm256_mul_ps(a,b)),c); }
-inline __m256 FNMS(const __m256& a, const __m256& b, const __m256& c) {
-  return _mm256_add_ps(NEG(_mm256_mul_ps(a,b)),c); }
+inline __m256 FMA(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_add_ps(_mm256_mul_ps(a, b), c);
+}
+inline __m256 FMS(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_sub_ps(_mm256_mul_ps(a, b), c);
+}
+inline __m256 FNMA(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_sub_ps(NEG(_mm256_mul_ps(a, b)), c);
+}
+inline __m256 FNMS(const __m256 &a, const __m256 &b, const __m256 &c) {
+  return _mm256_add_ps(NEG(_mm256_mul_ps(a, b)), c);
+}
 #endif
 
-inline std::pair<__m256,__m256> ADD(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b) {
-  return { ADD(a.first,b.first), ADD(a.second,b.second) }; }
-inline std::pair<__m256,__m256> SUB(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b) {
-  return { SUB(a.first,b.first), SUB(a.second,b.second) }; }
-inline std::pair<__m256,__m256> MUL(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b) {
-  return { MUL(a.first,b.first), MUL(a.second,b.second) }; }
+inline std::pair<__m256, __m256> ADD(const std::pair<__m256, __m256> &a,
+                                     const std::pair<__m256, __m256> &b) {
+  return {ADD(a.first, b.first), ADD(a.second, b.second)};
+}
+inline std::pair<__m256, __m256> SUB(const std::pair<__m256, __m256> &a,
+                                     const std::pair<__m256, __m256> &b) {
+  return {SUB(a.first, b.first), SUB(a.second, b.second)};
+}
+inline std::pair<__m256, __m256> MUL(const std::pair<__m256, __m256> &a,
+                                     const std::pair<__m256, __m256> &b) {
+  return {MUL(a.first, b.first), MUL(a.second, b.second)};
+}
 
-inline std::pair<__m256,__m256> NEG(const std::pair<__m256,__m256>& a) {
-  return { NEG(a.first), NEG(a.second) }; }
+inline std::pair<__m256, __m256> NEG(const std::pair<__m256, __m256> &a) {
+  return {NEG(a.first), NEG(a.second)};
+}
 
-inline std::pair<__m256,__m256> FMA(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FMA(a.first,b.first,c.first), FMA(a.second,b.second,c.second) }; }
-inline std::pair<__m256,__m256> FMS(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FMS(a.first,b.first,c.first), FMS(a.second,b.second,c.second) }; }
+inline std::pair<__m256, __m256> FMA(const std::pair<__m256, __m256> &a,
+                                     const std::pair<__m256, __m256> &b,
+                                     const std::pair<__m256, __m256> &c) {
+  return {FMA(a.first, b.first, c.first), FMA(a.second, b.second, c.second)};
+}
+inline std::pair<__m256, __m256> FMS(const std::pair<__m256, __m256> &a,
+                                     const std::pair<__m256, __m256> &b,
+                                     const std::pair<__m256, __m256> &c) {
+  return {FMS(a.first, b.first, c.first), FMS(a.second, b.second, c.second)};
+}
 // Note: inconsistency between FFTW and Intel intrinsics definitions of FNMA/S
-inline std::pair<__m256,__m256> FNMA(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FNMA(a.first,b.first,c.first), FNMA(a.second,b.second,c.second) }; }
-inline std::pair<__m256,__m256> FNMS(const std::pair<__m256,__m256>& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FNMS(a.first,b.first,c.first), FNMS(a.second,b.second,c.second) }; }
+inline std::pair<__m256, __m256> FNMA(const std::pair<__m256, __m256> &a,
+                                      const std::pair<__m256, __m256> &b,
+                                      const std::pair<__m256, __m256> &c) {
+  return {FNMA(a.first, b.first, c.first), FNMA(a.second, b.second, c.second)};
+}
+inline std::pair<__m256, __m256> FNMS(const std::pair<__m256, __m256> &a,
+                                      const std::pair<__m256, __m256> &b,
+                                      const std::pair<__m256, __m256> &c) {
+  return {FNMS(a.first, b.first, c.first), FNMS(a.second, b.second, c.second)};
+}
 
-inline std::pair<__m256,__m256> MUL(const __m256& a, const std::pair<__m256,__m256>& b) {
-  return { MUL(a,b.first), MUL(a,b.second) }; }
-inline std::pair<__m256,__m256> FMA(const __m256& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FMA(a,b.first,c.first), FMA(a,b.second,c.second) }; }
-inline std::pair<__m256,__m256> FMS(const __m256& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FMS(a,b.first,c.first), FMS(a,b.second,c.second) }; }
-inline std::pair<__m256,__m256> FNMA(const __m256& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FNMA(a,b.first,c.first), FNMA(a,b.second,c.second) }; }
-inline std::pair<__m256,__m256> FNMS(const __m256& a, const std::pair<__m256,__m256>& b, const std::pair<__m256,__m256>& c) {
-  return { FNMS(a,b.first,c.first), FNMS(a,b.second,c.second) }; }
+inline std::pair<__m256, __m256> MUL(const __m256 &a,
+                                     const std::pair<__m256, __m256> &b) {
+  return {MUL(a, b.first), MUL(a, b.second)};
+}
+inline std::pair<__m256, __m256> FMA(const __m256 &a,
+                                     const std::pair<__m256, __m256> &b,
+                                     const std::pair<__m256, __m256> &c) {
+  return {FMA(a, b.first, c.first), FMA(a, b.second, c.second)};
+}
+inline std::pair<__m256, __m256> FMS(const __m256 &a,
+                                     const std::pair<__m256, __m256> &b,
+                                     const std::pair<__m256, __m256> &c) {
+  return {FMS(a, b.first, c.first), FMS(a, b.second, c.second)};
+}
+inline std::pair<__m256, __m256> FNMA(const __m256 &a,
+                                      const std::pair<__m256, __m256> &b,
+                                      const std::pair<__m256, __m256> &c) {
+  return {FNMA(a, b.first, c.first), FNMA(a, b.second, c.second)};
+}
+inline std::pair<__m256, __m256> FNMS(const __m256 &a,
+                                      const std::pair<__m256, __m256> &b,
+                                      const std::pair<__m256, __m256> &c) {
+  return {FNMS(a, b.first, c.first), FNMS(a, b.second, c.second)};
+}
 
-#define DK(name, val) \
-  static const __m256 name = { (val),(val),(val),(val),(val),(val),(val),(val) }
+#define DK(name, val)                                                          \
+  static const __m256 name = {(val), (val), (val), (val),                      \
+                              (val), (val), (val), (val)}
 
-inline void MAKE_VOLATILE_STRIDE(int a, int b) { }
+inline void MAKE_VOLATILE_STRIDE(int a, int b) {}
 
 namespace m256 {
 
 using E = __m256;
 using R = __m256;
 
-inline int WS(const stride s, const stride i) { return s*i; }
+inline int WS(const stride s, const stride i) { return s * i; }
 
-#include "dft_r2cf_60.c"
-#include "dft_r2cb_60.c"
+#include "dft_c2cf_1024.c"
+#include "dft_c2cf_128.c"
+#include "dft_c2cf_256.c"
+#include "dft_c2cf_32.c"
+#include "dft_c2cf_512.c"
+#include "dft_c2cf_64.c"
+#include "dft_c2r_1024.c"
+#include "dft_c2r_128.c"
+#include "dft_c2r_256.c"
+#include "dft_c2r_32.c"
+#include "dft_c2r_512.c"
+#include "dft_c2r_64.c"
+#include "dft_r2cf_1024.c"
+#include "dft_r2cf_128.c"
+#include "dft_r2cf_256.c"
+#include "dft_r2cf_32.c"
+#include "dft_r2cf_512.c"
+#include "dft_r2cf_64.c"
 
 } // namespace m256
 
-TEST(TestDFT, AVX2)
+TEST(TestDFT, AVX2r2c) {
+
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  int ompT = omp_get_max_threads();
+
+  // for (int i = 0; i < Iter; i++) {
+  __m256 *xt = nullptr;
+  __m256 *xf = nullptr;
+  ::posix_memalign((void **)&xt, 32,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  ::posix_memalign((void **)&xf, 32,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  /* for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++)
+  xf[i] = _mm256_setzero_ps();
+std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);
+for (int ivec = 0; ivec < nvec; ivec++)
 {
-  __m256* xt = nullptr;
-  __m256* xf;
-  ::posix_memalign((void**)&xt, 32, nvec*nsamp*sizeof(float));
-  ::posix_memalign((void**)&xf, 32, nvec*2*(nsamp/2+1)*sizeof(float));
-  for(unsigned i=0;i<2*(nsamp/2+1);i++)xf[i] = _mm256_setzero_ps();
-  std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-  for(int ivec=0;ivec<nvec;ivec++) {
-    for(int isamp=0;isamp<nsamp;isamp++) {
-      xt[isamp][ivec] = gen(core);
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
+    xt[isamp][ivec] = gen(core);
+  }
+}
+//for (int iloop = 0; iloop < nloop; iloop++)
+//{*/
+  double iStart = cpuSecond();
+
+  for (int i = 0; i < Iter; i++) {
+    switch (nsamp) {
+    case 32:
+      m256::dft_codelet_r2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 64:
+      m256::dft_codelet_r2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 128:
+      m256::dft_codelet_r2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 256:
+      m256::dft_codelet_r2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 512:
+      m256::dft_codelet_r2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 1024:
+      m256::dft_codelet_r2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                  (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
     }
   }
-  for(int iloop=0; iloop<nloop; iloop++) {
-    m256::dft_codelet_r2cf_60(xt, xt+1, xf, xf+1, 2, 2, 2, 1, 0, 0);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
-        std::cout << xf[ifreq][0] << ' ';
-      }
-      std::cout << '\n';
+  double iElaps = cpuSecond() - iStart;
+  printf("EAVX2r2c : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*  if (iloop == 0)
+  {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+    {
+      std::cout << xf[ifreq][0] << ' ';
     }
+    std::cout << '\n';
   }
+//}*/
   ::free(xf);
   ::free(xt);
 }
+TEST(TestDFT, AVX2c2r) {
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  int ompT = omp_get_max_threads();
 
-namespace m256_FixedStride {
+  //  for (int i = 0; i < Iter; i++) {
+  __m256 *xt = nullptr;
+  __m256 *xf = nullptr;
+  ::posix_memalign((void **)&xt, 32,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  ::posix_memalign((void **)&xf, 32,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  /* for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++)
+  xf[i] = _mm256_setzero_ps();
+std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);
+for (int ivec = 0; ivec < nvec; ivec++)
+{
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
+    xt[isamp][ivec] = gen(core);
+  }
+}
+//for (int iloop = 0; iloop < nloop; iloop++)
+//{*/
+  double iStart = cpuSecond();
 
-using E = __m256;
-using R = __m256;
+  for (int i = 0; i < Iter; i++) {
+    switch (nsamp) {
+    case 32:
+      m256::dft_codelet_c2r_32(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                               (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 64:
+      m256::dft_codelet_c2r_64(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                               (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 128:
+      m256::dft_codelet_c2r_128(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 256:
+      m256::dft_codelet_c2r_256(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 512:
+      m256::dft_codelet_c2r_512(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 1024:
+      m256::dft_codelet_c2r_1024(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 8,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    }
+  }
+  double iElaps = cpuSecond() - iStart;
+  printf("EAVX2c2r : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*  if (iloop == 0)
+  {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+    {
+      std::cout << xf[ifreq][0] << ' ';
+    }
+    std::cout << '\n';
+  }
+//}*/
+  ::free(xf);
+  ::free(xt);
+}
+TEST(TestDFT, AVX2c2c) {
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  int ompT = omp_get_max_threads();
 
-inline int WS(const stride s, const stride i) { return 2*i; }
+  // for (int i = 0; i < Iter; i++) {
+  __m256 *xt = nullptr;
+  __m256 *xf = nullptr;
+  ::posix_memalign((void **)&xt, 32, nloop * 2 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 32, nloop * 2 * nsamp * sizeof(float));
+  //((void **)&xf, 32, nloop * 2 * nsamp * sizeof(float));
+  /* for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++)
+  xf[i] = _mm256_setzero_ps();
+std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);
+for (int ivec = 0; ivec < nvec; ivec++)
+{
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
+    xt[isamp][ivec] = gen(core);
+  }
+}
+//for (int iloop = 0; iloop < nloop; iloop++)
+//{*/
 
-#include "dft_r2cf_60.c"
+  double iStart = cpuSecond();
+  for (int i = 0; i < Iter; i++) {
+    switch (nsamp) {
+    case 32:
+      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
+                                (nsamp * 2), (nsamp * 2));
+      break;
+    case 64:
+      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
+                                (nsamp * 2), (nsamp * 2));
+      break;
+    case 128:
+      m256::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
+                                 (nsamp * 2), (nsamp * 2));
+      break;
+    case 256:
+      m256::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
+                                 (nsamp * 2), (nsamp * 2));
+      break;
+    case 512:
+      m256::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
+                                 (nsamp * 2), (nsamp * 2));
+      break;
+    case 1024:
+      m256::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
+                                  (nsamp * 2), (nsamp * 2));
+      break;
+    }
+  }
+  double iElaps = cpuSecond() - iStart;
+  printf("EAVX2c2c : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*  if (iloop == 0)
+  {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+    {
+      std::cout << xf[ifreq][0] << ' ';
+    }
+    std::cout << '\n';
+  }
+//}*/
+  ::free(xf);
+  ::free(xt);
+}
+#endif
+/*
+namespace m256_FixedStride
+{
+
+  using E = __m256;
+  using R = __m256;
+
+  inline int WS(const stride s, const stride i) { return 2 * i; }
+
 #include "dft_r2cb_60.c"
+#include "dft_r2cf_32.c"
+#include "dft_r2cf_60.c"
 
 } // namespace m256
 
 TEST(TestDFT, AVX2_FixedStride)
 {
-  __m256* xt = nullptr;
-  __m256* xf;
-  ::posix_memalign((void**)&xt, 32, nvec*nsamp*sizeof(float));
-  ::posix_memalign((void**)&xf, 32, nvec*2*(nsamp/2+1)*sizeof(float));
-  for(unsigned i=0;i<2*(nsamp/2+1);i++)xf[i] = _mm256_setzero_ps();
-  std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-  for(int ivec=0;ivec<nvec;ivec++) {
-    for(int isamp=0;isamp<nsamp;isamp++) {
+  __m256 *xt = nullptr;
+  __m256 *xf;
+  ::posix_memalign((void **)&xt, 32, nvec * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 32, nvec * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i] =
+_mm256_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
       xt[isamp][ivec] = gen(core);
     }
   }
-  for(int iloop=0; iloop<nloop; iloop++) {
-    m256_FixedStride::dft_codelet_r2cf_60(xt, xt+1, xf, xf+1, 2, 2, 2, 1, 0, 0);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
+  for (int iloop = 0; iloop < nloop; iloop++)
+  {
+    m256_FixedStride::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 2, 2, 2, 1, 0,
+0); if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
         std::cout << xf[ifreq][0] << ' ';
       }
       std::cout << '\n';
@@ -326,42 +817,48 @@ TEST(TestDFT, AVX2_FixedStride)
   ::free(xt);
 }
 
-namespace m256_Unroll2 {
+namespace m256_Unroll2
+{
 
-using E = std::pair<__m256,__m256>;
-using R = std::pair<__m256,__m256>;
-using INT = int;
-using stride = int;
+  using E = std::pair<__m256, __m256>;
+  using R = std::pair<__m256, __m256>;
+  using INT = int;
+  using stride = int;
 
-inline int WS(const stride s, const stride i) { return s*i; }
+  inline int WS(const stride s, const stride i) { return s * i; }
 
-#include "dft_r2cf_60.c"
 #include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
 
 } // namespace m256
 
 TEST(TestDFT, AVX2_Unroll2)
 {
-  std::pair<__m256,__m256>* xt = nullptr;
-  std::pair<__m256,__m256>* xf;
-  ::posix_memalign((void**)&xt, 32, 2*nvec*nsamp*sizeof(float));
-  ::posix_memalign((void**)&xf, 32, 2*nvec*2*(nsamp/2+1)*sizeof(float));
-  for(unsigned i=0;i<2*(nsamp/2+1);i++)
-    xf[i].first = xf[i].second = _mm256_setzero_ps();
-  std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-  for(int ivec=0;ivec<nvec;ivec++) {
-    for(int isamp=0;isamp<nsamp;isamp++) {
+  std::pair<__m256, __m256> *xt = nullptr;
+  std::pair<__m256, __m256> *xf;
+  ::posix_memalign((void **)&xt, 32, 2 * nvec * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 32, 2 * nvec * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i].first =
+xf[i].second = _mm256_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
       xt[isamp].first[ivec] = gen(core);
     }
-    for(int isamp=0;isamp<nsamp;isamp++) {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
       xt[isamp].second[ivec] = gen(core);
     }
   }
-  for(int iloop=0; iloop<nloop/2; iloop++) {
-    m256_Unroll2::dft_codelet_r2cf_60(xt, xt+1, xf, xf+1, 2, 2, 2, 1, 0, 0);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
+  for (int iloop = 0; iloop < nloop / 2; iloop++)
+  {
+    m256_Unroll2::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 2, 2, 2, 1, 0, 0);
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
         std::cout << xf[ifreq].first[0] << ' ';
       }
       std::cout << '\n';
@@ -371,40 +868,46 @@ TEST(TestDFT, AVX2_Unroll2)
   ::free(xt);
 }
 
-namespace m256_Unroll2_FixedStride {
+namespace m256_Unroll2_FixedStride
+{
 
-using E = std::pair<__m256,__m256>;
-using R = std::pair<__m256,__m256>;
+  using E = std::pair<__m256, __m256>;
+  using R = std::pair<__m256, __m256>;
 
-inline int WS(const stride s, const stride i) { return 2*i; }
+  inline int WS(const stride s, const stride i) { return 2 * i; }
 
-#include "dft_r2cf_60.c"
 #include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
 
 } // namespace m256
 
 TEST(TestDFT, AVX2_Unroll2_FixedStride)
 {
-  std::pair<__m256,__m256>* xt = nullptr;
-  std::pair<__m256,__m256>* xf;
-  ::posix_memalign((void**)&xt, 32, 2*nvec*nsamp*sizeof(float));
-  ::posix_memalign((void**)&xf, 32, 2*nvec*2*(nsamp/2+1)*sizeof(float));
-  for(unsigned i=0;i<2*(nsamp/2+1);i++)
-    xf[i].first = xf[i].second = _mm256_setzero_ps();
-  std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-  for(int ivec=0;ivec<nvec;ivec++) {
-    for(int isamp=0;isamp<nsamp;isamp++) {
+  std::pair<__m256, __m256> *xt = nullptr;
+  std::pair<__m256, __m256> *xf;
+  ::posix_memalign((void **)&xt, 32, 2 * nvec * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 32, 2 * nvec * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i].first =
+xf[i].second = _mm256_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
       xt[isamp].first[ivec] = gen(core);
     }
-    for(int isamp=0;isamp<nsamp;isamp++) {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
       xt[isamp].second[ivec] = gen(core);
     }
   }
-  for(int iloop=0; iloop<nloop/2; iloop++) {
-    m256_Unroll2_FixedStride::dft_codelet_r2cf_60(xt, xt+1, xf, xf+1, 0, 0, 0, 1, 0, 0);
-    if(iloop==0) {
-      for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
+  for (int iloop = 0; iloop < nloop / 2; iloop++)
+  {
+    m256_Unroll2_FixedStride::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 0, 0,
+0, 1, 0, 0); if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
         std::cout << xf[ifreq].first[0] << ' ';
       }
       std::cout << '\n';
@@ -415,102 +918,560 @@ TEST(TestDFT, AVX2_Unroll2_FixedStride)
 }
 
 #endif
+*/
+#if defined(__AVX512F__)
 
-#ifdef HAVE_OPENCL
-#include"cl.hpp"
-TEST(TestDFT, OpenCL)
-{
-  // get all platforms (drivers), e.g. NVIDIA
-  std::vector<cl::Platform> all_platforms;
-  cl::Platform::get(&all_platforms);
-  EXPECT_GT(all_platforms.size(), 0);
+using INT = int;
+using stride = int;
 
-  cl::Platform default_platform=all_platforms[0];
-  std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
-
-  // get default device (CPUs, GPUs) of the default platform
-  std::vector<cl::Device> all_devices;
-  default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
-  EXPECT_GT(all_devices.size(), 0);
-
-  // use device[1] because that's a GPU; device[0] is the CPU
-  cl::Device default_device=all_devices[1];
-  std::cout<< "Using device: "<<default_device.getInfo<CL_DEVICE_NAME>()<<"\n";
-
-  // a context is like a "runtime link" to the device and platform;
-  // i.e. communication is possible
-  cl::Context context({default_device});
-
-  // create the program that we want to execute on the device
-  cl::Program::Sources sources;
-
-  std::string kernel_code=
-    "#define E float\n"
-    "#define R __global float\n"
-    "#define INT int\n"
-    "#define stride int\n"
-    "#define ADD(a,b) ((a)+(b))\n"
-    "#define SUB(a,b) ((a)-(b))\n"
-    "#define MUL(a,b) ((a)*(b))\n"
-    "#define NEG(a) (-(a))\n"
-    "#define FMA(a,b,c) fma((a),(b),(c))\n"
-    "#define FMS(a,b,c) fma((a),(b),-(c))\n"
-    "#define FNMA(a,b,c) (-fma((a),(b),(c)))\n"
-    "#define FNMS(a,b,c) fma(-(a),(b),(c))\n"
-    "#define WS(s,i) (2*(i))\n"
-    "#define DK(name, val) const float name = val\n"
-    "#define MAKE_VOLATILE_STRIDE(a, b) 1\n"
-    "#include \"../dft_r2cf_60.c\"\n"
-    "void __kernel simple_dft(__global float* xt, __global float* xf) {\n"
-    "  dft_codelet_r2cf_60(xt, xt+1, xf, xf+1, 0, 0, 0, 1, 0, 0);\n"
-    "}\n";
-
-  //std::cout << kernel_code;
-  sources.push_back({kernel_code.c_str(), kernel_code.length()});
-
-  cl::Program program(context, sources);
-  if (program.build({default_device}) != CL_SUCCESS) {
-      std::cout << "Error building: " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(default_device) << std::endl;
-      exit(1);
-  }
-
-  // create buffers on device (allocate space on GPU)
-  cl::Buffer buffer_xt(context, CL_MEM_READ_WRITE, sizeof(float) * nsamp);
-  cl::Buffer buffer_xf(context, CL_MEM_READ_WRITE, sizeof(float) * (2*(nsamp/2)+1));
-
-  // create things on here (CPU)
-  float* xt = fftwf_alloc_real(nsamp);
-  float* xf = fftwf_alloc_real(2*(nsamp/2 + 1));
-  std::mt19937 core(12345);
-  std::uniform_real_distribution<float> gen(0.0,1.0);
-
-  for(int isamp=0;isamp<nsamp;isamp++) {
-    xt[isamp] = gen(core);
-  }
-  for(int ifreq=0;ifreq<2*(nsamp/2+1);ifreq++) {
-    xf[ifreq] = 0;
-  }
-
-  // create a queue (a queue of commands that the GPU will execute)
-  cl::CommandQueue queue(context, default_device);
-
-  // push write commands to queue
-  queue.enqueueWriteBuffer(buffer_xt, CL_TRUE, 0, sizeof(float) * nsamp, xt);
-  queue.enqueueWriteBuffer(buffer_xf, CL_TRUE, 0, sizeof(float) * 2*(nsamp/2+1), xf);
-
-  // RUN ZE KERNEL
-  cl::make_kernel<cl::Buffer, cl::Buffer> simple_dft(cl::Kernel(program, "simple_dft"));
-  cl::EnqueueArgs eargs(queue, cl::NDRange(nloop*nvec), cl::NullRange);
-  simple_dft(eargs, buffer_xt, buffer_xf);
-
-  // read result from GPU to here
-  queue.enqueueReadBuffer(buffer_xf, CL_TRUE, 0, sizeof(float) * (2*(nsamp/2)+1), xf);
-
-  for(int ifreq=0;ifreq<2*(nsamp/2 + 1);ifreq++) {
-    std::cout << xf[ifreq] << ' ';
-  }
-  std::cout << '\n';
+inline __m512 ADD(const __m512 &a, const __m512 &b) {
+  return _mm512_add_ps(a, b);
 }
+inline __m512 SUB(const __m512 &a, const __m512 &b) {
+  return _mm512_sub_ps(a, b);
+}
+inline __m512 MUL(const __m512 &a, const __m512 &b) {
+  return _mm512_mul_ps(a, b);
+}
+
+// inline __m512 NEG(const __m512 & a) { return
+//_mm512_sub_ps(_mm256_setzero_ps(), a);
+//}
+inline __m512 NEG(const __m512 &a) {
+  return _mm512_xor_ps(a, _mm512_set1_ps(-0.0));
+}
+
+#if defined(__FMA__)
+inline __m512 FMA(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_fmadd_ps(a, b, c);
+}
+inline __m512 FMS(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_fmsub_ps(a, b, c);
+}
+// Note: inconsistency between FFTW and Intel intrinsics definitions of FNMA/S
+inline __m512 FNMA(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_fnmsub_ps(a, b, c);
+}
+inline __m512 FNMS(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_fnmadd_ps(a, b, c);
+}
+#else
+inline __m512 FMA(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_add_ps(_mm512_mul_ps(a, b), c);
+}
+inline __m512 FMS(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_sub_ps(_mm512_mul_ps(a, b), c);
+}
+inline __m512 FNMA(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_sub_ps(NEG(_mm512_mul_ps(a, b)), c);
+}
+inline __m512 FNMS(const __m512 &a, const __m512 &b, const __m512 &c) {
+  return _mm512_add_ps(NEG(_mm512_mul_ps(a, b)), c);
+}
+#endif
+
+inline std::pair<__m512, __m512> ADD(const std::pair<__m512, __m512> &a,
+                                     const std::pair<__m512, __m512> &b) {
+  return {ADD(a.first, b.first), ADD(a.second, b.second)};
+}
+inline std::pair<__m512, __m512> SUB(const std::pair<__m512, __m512> &a,
+                                     const std::pair<__m512, __m512> &b) {
+  return {SUB(a.first, b.first), SUB(a.second, b.second)};
+}
+inline std::pair<__m512, __m512> MUL(const std::pair<__m512, __m512> &a,
+                                     const std::pair<__m512, __m512> &b) {
+  return {MUL(a.first, b.first), MUL(a.second, b.second)};
+}
+
+inline std::pair<__m512, __m512> NEG(const std::pair<__m512, __m512> &a) {
+  return {NEG(a.first), NEG(a.second)};
+}
+
+inline std::pair<__m512, __m512> FMA(const std::pair<__m512, __m512> &a,
+                                     const std::pair<__m512, __m512> &b,
+                                     const std::pair<__m512, __m512> &c) {
+  return {FMA(a.first, b.first, c.first), FMA(a.second, b.second, c.second)};
+}
+inline std::pair<__m512, __m512> FMS(const std::pair<__m512, __m512> &a,
+                                     const std::pair<__m512, __m512> &b,
+                                     const std::pair<__m512, __m512> &c) {
+  return {FMS(a.first, b.first, c.first), FMS(a.second, b.second, c.second)};
+}
+// Note: inconsistency between FFTW and Intel intrinsics definitions of FNMA/S
+inline std::pair<__m512, __m512> FNMA(const std::pair<__m512, __m512> &a,
+                                      const std::pair<__m512, __m512> &b,
+                                      const std::pair<__m512, __m512> &c) {
+  return {FNMA(a.first, b.first, c.first), FNMA(a.second, b.second, c.second)};
+}
+inline std::pair<__m512, __m512> FNMS(const std::pair<__m512, __m512> &a,
+                                      const std::pair<__m512, __m512> &b,
+                                      const std::pair<__m512, __m512> &c) {
+  return {FNMS(a.first, b.first, c.first), FNMS(a.second, b.second, c.second)};
+}
+
+inline std::pair<__m512, __m512> MUL(const __m512 &a,
+                                     const std::pair<__m512, __m512> &b) {
+  return {MUL(a, b.first), MUL(a, b.second)};
+}
+inline std::pair<__m512, __m512> FMA(const __m512 &a,
+                                     const std::pair<__m512, __m512> &b,
+                                     const std::pair<__m512, __m512> &c) {
+  return {FMA(a, b.first, c.first), FMA(a, b.second, c.second)};
+}
+inline std::pair<__m512, __m512> FMS(const __m512 &a,
+                                     const std::pair<__m512, __m512> &b,
+                                     const std::pair<__m512, __m512> &c) {
+  return {FMS(a, b.first, c.first), FMS(a, b.second, c.second)};
+}
+inline std::pair<__m512, __m512> FNMA(const __m512 &a,
+                                      const std::pair<__m512, __m512> &b,
+                                      const std::pair<__m512, __m512> &c) {
+  return {FNMA(a, b.first, c.first), FNMA(a, b.second, c.second)};
+}
+inline std::pair<__m512, __m512> FNMS(const __m512 &a,
+                                      const std::pair<__m512, __m512> &b,
+                                      const std::pair<__m512, __m512> &c) {
+  return {FNMS(a, b.first, c.first), FNMS(a, b.second, c.second)};
+}
+
+#define DK(name, val)                                                          \
+  static const __m512 name = {(val), (val), (val), (val),                      \
+                              (val), (val), (val), (val)}
+
+namespace m512 {
+
+using E = __m512;
+using R = __m512;
+
+inline int WS(const stride s, const stride i) { return s * i; }
+
+#include "dft_c2cf_1024.c"
+#include "dft_c2cf_128.c"
+#include "dft_c2cf_256.c"
+#include "dft_c2cf_32.c"
+#include "dft_c2cf_512.c"
+#include "dft_c2cf_64.c"
+#include "dft_c2r_1024.c"
+#include "dft_c2r_128.c"
+#include "dft_c2r_256.c"
+#include "dft_c2r_32.c"
+#include "dft_c2r_512.c"
+#include "dft_c2r_64.c"
+#include "dft_r2cf_1024.c"
+#include "dft_r2cf_128.c"
+#include "dft_r2cf_256.c"
+#include "dft_r2cf_32.c"
+#include "dft_r2cf_512.c"
+#include "dft_r2cf_64.c"
+
+} // namespace m512
+
+TEST(TestDFT, AVX512r2c) {
+
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  // for (int i = 0; i < Iter; i++) {
+  __m512 *xt = nullptr;
+  __m512 *xf = nullptr;
+  ::posix_memalign((void **)&xt, 64,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  ::posix_memalign((void **)&xf, 64,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  /* for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++)
+  xf[i] = _mm256_setzero_ps();
+std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);
+for (int ivec = 0; ivec < nvec; ivec++)
+{
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
+    xt[isamp][ivec] = gen(core);
+  }
+}
+//for (int iloop = 0; iloop < nloop; iloop++)
+//{*/
+  int ompT = omp_get_max_threads();
+
+  double iStart = cpuSecond();
+
+  for (int i = 0; i < Iter; i++) {
+    switch (nsamp) {
+    case 32:
+      m512::dft_codelet_r2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 64:
+      m512::dft_codelet_r2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 128:
+      m512::dft_codelet_r2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 256:
+      m512::dft_codelet_r2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 512:
+      m512::dft_codelet_r2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 1024:
+      m512::dft_codelet_r2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                  (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    }
+  }
+  double iElaps = cpuSecond() - iStart;
+  printf("EAVX512r2c : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*  if (iloop == 0)
+  {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+    {
+      std::cout << xf[ifreq][0] << ' ';
+    }
+    std::cout << '\n';
+  }
+//}*/
+  ::free(xf);
+  ::free(xt);
+}
+
+TEST(TestDFT, AVX512c2r) {
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  // for (int i = 0; i < Iter; i++) {
+  __m512 *xt = nullptr;
+  __m512 *xf = nullptr;
+  ::posix_memalign((void **)&xt, 64,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  ::posix_memalign((void **)&xf, 64,
+                   nloop * 2 * (nsamp / 2 + 1) * sizeof(float));
+  /* for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++)
+  xf[i] = _mm256_setzero_ps();
+std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);
+for (int ivec = 0; ivec < nvec; ivec++)
+{
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
+    xt[isamp][ivec] = gen(core);
+  }
+}
+//for (int iloop = 0; iloop < nloop; iloop++)
+//{*/
+  int ompT = omp_get_max_threads();
+
+  double iStart = cpuSecond();
+  for (int i = 0; i < Iter; i++) {
+    switch (nsamp) {
+    case 32:
+      m512::dft_codelet_c2r_32(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                               (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 64:
+      m512::dft_codelet_c2r_64(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                               (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 128:
+      m512::dft_codelet_c2r_128(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 256:
+      m512::dft_codelet_c2r_256(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 512:
+      m512::dft_codelet_c2r_512(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    case 1024:
+      m512::dft_codelet_c2r_1024(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / 16,
+                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      break;
+    }
+  }
+  double iElaps = cpuSecond() - iStart;
+  printf("EAVX512c2r : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*  if (iloop == 0)
+  {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+    {
+      std::cout << xf[ifreq][0] << ' ';
+    }
+    std::cout << '\n';
+  }
+//}*/
+  ::free(xf);
+  ::free(xt);
+}
+TEST(TestDFT, AVX512c2c) {
+  char *nsampVar;
+  char *nloopVar;
+  nsampVar = getenv("NSAMP");
+  nloopVar = getenv("NLOOP");
+  int nsamp = atoi(nsampVar);
+  int nloop = atoi(nloopVar);
+  // for (int i = 0; i < Iter; i++) {
+  __m512 *xt = nullptr;
+  __m512 *xf = nullptr;
+  ::posix_memalign((void **)&xt, 64, nloop * 2 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, nloop * 2 * nsamp * sizeof(float));
+  //((void **)&xf, 32, nloop * 2 * nsamp * sizeof(float));
+  /* for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++)
+  xf[i] = _mm256_setzero_ps();
+std::mt19937 core(12345);
+std::uniform_real_distribution<float> gen(0.0, 1.0);
+for (int ivec = 0; ivec < nvec; ivec++)
+{
+  for (int isamp = 0; isamp < nsamp; isamp++)
+  {
+    xt[isamp][ivec] = gen(core);
+  }
+}
+//for (int iloop = 0; iloop < nloop; iloop++)
+//{*/
+  int ompT = omp_get_max_threads();
+
+  double iStart = cpuSecond();
+  for (int i = 0; i < Iter; i++) {
+    switch (nsamp) {
+    case 32:
+      m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
+                                (nsamp * 2), (nsamp * 2));
+      break;
+    case 64:
+      m512::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
+                                (nsamp * 2), (nsamp * 2));
+      break;
+    case 128:
+      m512::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
+                                 (nsamp * 2), (nsamp * 2));
+      break;
+    case 256:
+      m512::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
+                                 (nsamp * 2), (nsamp * 2));
+      break;
+    case 512:
+      m512::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
+                                 (nsamp * 2), (nsamp * 2));
+      break;
+    case 1024:
+      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
+                                  (nsamp * 2), (nsamp * 2));
+      break;
+    }
+  }
+  double iElaps = cpuSecond() - iStart;
+  printf("EAVX512c2c : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
+         nloop, ompT, iElaps * 1000);
+  /*  if (iloop == 0)
+  {
+    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+    {
+      std::cout << xf[ifreq][0] << ' ';
+    }
+    std::cout << '\n';
+  }
+//}*/
+  ::free(xf);
+  ::free(xt);
+}
+
+/*
+
+#include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
+
+} // namespace m256
+
+TEST(TestDFT, AVX2_512)
+{
+  __m512 *xt = nullptr;
+  __m512 *xf;
+
+  ::posix_memalign((void **)&xt, 64, nvec_512 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, nvec_512 * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i] =
+_mm512_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec_512; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp][ivec] = gen(core);
+    }
+  }
+  for (int iloop = 0; iloop < nloop; iloop++)
+  {
+    m512::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 2, 2, 2, 1, 0, 0);
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[ifreq][0] << ' ';
+      }
+      std::cout << '\n';
+    }
+  }
+  ::free(xf);
+  ::free(xt);
+}
+
+namespace m512_FixedStride
+{
+
+  using E = __m512;
+  using R = __m512;
+
+  inline int WS(const stride s, const stride i) { return 2 * i; }
+
+#include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
+
+} // namespace m256
+
+TEST(TestDFT, AVX512_FixedStride)
+{
+  __m512 *xt = nullptr;
+  __m512 *xf;
+  ::posix_memalign((void **)&xt, 64, nvec_512 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, nvec_512 * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i] =
+_mm512_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec_512; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp][ivec] = gen(core);
+    }
+  }
+  for (int iloop = 0; iloop < nloop; iloop++)
+  {
+    m512_FixedStride::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 2, 2, 2, 1, 0,
+0); if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[ifreq][0] << ' ';
+      }
+      std::cout << '\n';
+    }
+  }
+  ::free(xf);
+  ::free(xt);
+}
+
+namespace m512_Unroll2
+{
+
+  using E = std::pair<__m512, __m512>;
+  using R = std::pair<__m512, __m512>;
+  using INT = int;
+  using stride = int;
+
+  inline int WS(const stride s, const stride i) { return s * i; }
+
+#include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
+
+} // namespace m256
+
+TEST(TestDFT, AVX512_Unroll2)
+{
+  std::pair<__m512, __m512> *xt = nullptr;
+  std::pair<__m512, __m512> *xf;
+  ::posix_memalign((void **)&xt, 64, 2 * nvec_512 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, 2 * nvec_512 * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i].first =
+xf[i].second = _mm512_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec_512; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp].first[ivec] = gen(core);
+    }
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp].second[ivec] = gen(core);
+    }
+  }
+  for (int iloop = 0; iloop < nloop / 2; iloop++)
+  {
+    m512_Unroll2::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 2, 2, 2, 1, 0, 0);
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[ifreq].first[0] << ' ';
+      }
+      std::cout << '\n';
+    }
+  }
+  ::free(xf);
+  ::free(xt);
+}
+
+namespace m512_Unroll2_FixedStride
+{
+
+  using E = std::pair<__m512, __m512>;
+  using R = std::pair<__m512, __m512>;
+
+  inline int WS(const stride s, const stride i) { return 2 * i; }
+
+#include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
+
+} // namespace m256
+
+TEST(TestDFT, AVX512_Unroll2_FixedStride)
+{
+  std::pair<__m512, __m512> *xt = nullptr;
+  std::pair<__m512, __m512> *xf;
+  ::posix_memalign((void **)&xt, 64, 2 * nvec_512 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, 2 * nvec_512 * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i].first =
+xf[i].second = _mm512_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec_512; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp].first[ivec] = gen(core);
+    }
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp].second[ivec] = gen(core);
+    }
+  }
+  for (int iloop = 0; iloop < nloop / 2; iloop++)
+  {
+    m512_Unroll2_FixedStride::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 0, 0,
+0, 1, 0, 0); if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[ifreq].first[0] << ' ';
+      }
+      std::cout << '\n';
+    }
+  }
+  ::free(xf);
+  ::free(xt);
+}*/
 #endif
 
 int main(int argc, char **argv) {

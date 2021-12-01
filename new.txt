@@ -1,0 +1,343 @@
+########################################################################
+#      Date:           Tue 30 Nov 2021 12:29:14 PM PST
+#    Job ID:           1032752.v-qsvr-1.aidevcloud
+#      User:           u111053
+# Resources:           neednodes=1:icx:ppn=2,nodes=1:icx:ppn=2,walltime=24:00:00
+########################################################################
+
+Architecture:                    x86_64
+CPU op-mode(s):                  32-bit, 64-bit
+Byte Order:                      Little Endian
+Address sizes:                   52 bits physical, 57 bits virtual
+CPU(s):                          128
+On-line CPU(s) list:             0-127
+Thread(s) per core:              2
+Core(s) per socket:              32
+Socket(s):                       2
+NUMA node(s):                    2
+Vendor ID:                       GenuineIntel
+CPU family:                      6
+Model:                           106
+Model name:                      Intel(R) Xeon(R) Platinum 8358 CPU @ 2.60GHz
+Stepping:                        6
+CPU MHz:                         800.911
+CPU max MHz:                     3400.0000
+CPU min MHz:                     800.0000
+BogoMIPS:                        5200.00
+Virtualization:                  VT-x
+L1d cache:                       3 MiB
+L1i cache:                       2 MiB
+L2 cache:                        80 MiB
+L3 cache:                        96 MiB
+NUMA node0 CPU(s):               0-31,64-95
+NUMA node1 CPU(s):               32-63,96-127
+Vulnerability Itlb multihit:     Not affected
+Vulnerability L1tf:              Not affected
+Vulnerability Mds:               Not affected
+Vulnerability Meltdown:          Not affected
+Vulnerability Spec store bypass: Mitigation; Speculative Store Bypass disabled via prctl and seccomp
+Vulnerability Spectre v1:        Mitigation; usercopy/swapgs barriers and __user pointer sanitization
+Vulnerability Spectre v2:        Mitigation; Enhanced IBRS, IBPB conditional, RSB filling
+Vulnerability Srbds:             Not affected
+Vulnerability Tsx async abort:   Not affected
+Flags:                           fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 invpcid_single ssbd mba ibrs ibpb stibp ibrs_enhanced tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb intel_pt avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local wbnoinvd dtherm ida arat pln pts hwp hwp_act_window hwp_epp hwp_pkg_req avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg tme avx512_vpopcntdq rdpid md_clear pconfig flush_l1d arch_capabilities
+INTER = 1
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 9.274006 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (22 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.368855 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (6 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.865004 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (6 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 15.208960 
+[       OK ] TestDFT.AVX2r2c (17 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 13.391018 
+[       OK ] TestDFT.AVX2c2r (14 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 17.604828 
+[       OK ] TestDFT.AVX2c2c (17 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 5.346060 
+[       OK ] TestDFT.AVX512r2c (6 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 6.253958 
+[       OK ] TestDFT.AVX512c2r (6 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.542019 
+[       OK ] TestDFT.AVX512c2c (3 ms)
+[----------] 9 tests from TestDFT (98 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (98 ms total)
+[  PASSED  ] 9 tests.
+INTER = 2
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 9.361982 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (12 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.098011 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (6 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.831936 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (5 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 13.439894 
+[       OK ] TestDFT.AVX2r2c (14 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 10.056973 
+[       OK ] TestDFT.AVX2c2r (10 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 17.874956 
+[       OK ] TestDFT.AVX2c2c (18 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.765106 
+[       OK ] TestDFT.AVX512r2c (4 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.384995 
+[       OK ] TestDFT.AVX512c2r (4 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 0.550032 
+[       OK ] TestDFT.AVX512c2c (0 ms)
+[----------] 9 tests from TestDFT (73 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (73 ms total)
+[  PASSED  ] 9 tests.
+INTER = 3
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.942801 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (5 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.328945 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (3 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.372814 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 6.882191 
+[       OK ] TestDFT.AVX2r2c (7 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 7.666111 
+[       OK ] TestDFT.AVX2c2r (7 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 13.321161 
+[       OK ] TestDFT.AVX2c2c (14 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.606081 
+[       OK ] TestDFT.AVX512r2c (3 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.376173 
+[       OK ] TestDFT.AVX512c2r (5 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 0.550985 
+[       OK ] TestDFT.AVX512c2c (0 ms)
+[----------] 9 tests from TestDFT (48 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (48 ms total)
+[  PASSED  ] 9 tests.
+INTER = 4
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.972126 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (5 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.344919 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.406908 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (3 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 7.180929 
+[       OK ] TestDFT.AVX2r2c (7 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 7.822037 
+[       OK ] TestDFT.AVX2c2r (8 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 13.126135 
+[       OK ] TestDFT.AVX2c2c (13 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.593206 
+[       OK ] TestDFT.AVX512r2c (4 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.376888 
+[       OK ] TestDFT.AVX512c2r (4 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 0.545979 
+[       OK ] TestDFT.AVX512c2c (1 ms)
+[----------] 9 tests from TestDFT (49 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (49 ms total)
+[  PASSED  ] 9 tests.
+INTER = 5
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.864838 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (5 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.295090 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (3 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.383066 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 6.947041 
+[       OK ] TestDFT.AVX2r2c (7 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 8.744001 
+[       OK ] TestDFT.AVX2c2r (9 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 16.267061 
+[       OK ] TestDFT.AVX2c2c (16 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.592014 
+[       OK ] TestDFT.AVX512r2c (4 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.387856 
+[       OK ] TestDFT.AVX512c2r (4 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 0.555992 
+[       OK ] TestDFT.AVX512c2c (1 ms)
+[----------] 9 tests from TestDFT (53 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (53 ms total)
+[  PASSED  ] 9 tests.
+INTER = 6
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.876997 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (5 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.278877 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.318932 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (3 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 7.647038 
+[       OK ] TestDFT.AVX2r2c (8 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 9.073973 
+[       OK ] TestDFT.AVX2c2r (9 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 15.494108 
+[       OK ] TestDFT.AVX2c2c (15 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.238844 
+[       OK ] TestDFT.AVX512r2c (5 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.400969 
+[       OK ] TestDFT.AVX512c2r (4 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 0.552893 
+[       OK ] TestDFT.AVX512c2c (1 ms)
+[----------] 9 tests from TestDFT (54 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (54 ms total)
+[  PASSED  ] 9 tests.
+INTER = 7
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.861977 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (5 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.288176 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (3 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.369953 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 6.818056 
+[       OK ] TestDFT.AVX2r2c (7 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 8.358002 
+[       OK ] TestDFT.AVX2c2r (8 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 14.986992 
+[       OK ] TestDFT.AVX2c2c (15 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.593922 
+[       OK ] TestDFT.AVX512r2c (4 ms)
+[ RUN      ] TestDFT.AVX512c2r
+EAVX512c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 4.395008 
+[       OK ] TestDFT.AVX512c2r (4 ms)
+[ RUN      ] TestDFT.AVX512c2c
+EAVX512c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 0.552893 
+[       OK ] TestDFT.AVX512c2c (1 ms)
+[----------] 9 tests from TestDFT (51 ms total)
+
+[----------] Global test environment tear-down
+[==========] 9 tests from 1 test case ran. (51 ms total)
+[  PASSED  ] 9 tests.
+INTER = 8
+NSAMP = 32
+NLOOP = 32
+OMP_NUM_THREADS = 1
+[==========] Running 9 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 9 tests from TestDFT
+[ RUN      ] TestDFT.manyc2cFFTW_Aligned_One
+Ec2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 2.886057 
+[       OK ] TestDFT.manyc2cFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.manyr2cFFTW_Aligned_One
+Er2cFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.271963 
+[       OK ] TestDFT.manyr2cFFTW_Aligned_One (4 ms)
+[ RUN      ] TestDFT.manyc2rFFTW_Aligned_One
+Ec2rFFTW : nsamp : 32 nloop : 32 ompT : 1 iElaps : 1.384974 
+[       OK ] TestDFT.manyc2rFFTW_Aligned_One (3 ms)
+[ RUN      ] TestDFT.AVX2r2c
+EAVX2r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 6.696939 
+[       OK ] TestDFT.AVX2r2c (7 ms)
+[ RUN      ] TestDFT.AVX2c2r
+EAVX2c2r : nsamp : 32 nloop : 32 ompT : 1 iElaps : 7.463932 
+[       OK ] TestDFT.AVX2c2r (8 ms)
+[ RUN      ] TestDFT.AVX2c2c
+EAVX2c2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 13.602018 
+[       OK ] TestDFT.AVX2c2c (13 ms)
+[ RUN      ] TestDFT.AVX512r2c
+EAVX512r2c : nsamp : 32 nloop : 32 ompT : 1 iElaps : 3.729105 
