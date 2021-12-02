@@ -48,8 +48,8 @@ TEST(TestDFT, manyc2cFFTW_Aligned_One) {
   int nloop = atoi(nloopVar);
   int ompT = omp_get_max_threads();
 
-  fftw_init_threads();
-  fftw_plan_with_nthreads(ompT);
+  fftwf_init_threads();
+  fftwf_plan_with_nthreads(ompT);
 
   float *xt = fftwf_alloc_real((nsamp * 2 + 2) * nloop);
   float *xf = fftwf_alloc_real((nsamp * 2 + 2) * nloop);
@@ -67,7 +67,7 @@ TEST(TestDFT, manyc2cFFTW_Aligned_One) {
          nloop, ompT, iElaps * 1000);
 
   fftwf_destroy_plan(plan);
-  fftw_cleanup_threads();
+  fftwf_cleanup_threads();
 
   free(xt);
   free(xf);
@@ -83,8 +83,8 @@ TEST(TestDFT, manyr2cFFTW_Aligned_One) {
   int nsamp = atoi(nsampVar);
   int nloop = atoi(nloopVar);
   int ompT = omp_get_max_threads();
-  fftw_init_threads();
-  fftw_plan_with_nthreads(ompT);
+  fftwf_init_threads();
+  fftwf_plan_with_nthreads(ompT);
 
   // omp_lock_t writelock;
   // omp_init_lock(&writelock);
@@ -105,7 +105,7 @@ TEST(TestDFT, manyr2cFFTW_Aligned_One) {
          nloop, ompT, iElaps * 1000);
 
   fftwf_destroy_plan(plan);
-  fftw_cleanup_threads();
+  fftwf_cleanup_threads();
   fftwf_free(xf);
   fftwf_free(xt);
 
@@ -121,8 +121,8 @@ TEST(TestDFT, manyc2rFFTW_Aligned_One) {
   int nsamp = atoi(nsampVar);
   int nloop = atoi(nloopVar);
   int ompT = omp_get_max_threads();
-  fftw_init_threads();
-  fftw_plan_with_nthreads(ompT);
+  fftwf_init_threads();
+  fftwf_plan_with_nthreads(ompT);
 
   // omp_lock_t writelock;
   // omp_init_lock(&writelock);
@@ -143,7 +143,7 @@ TEST(TestDFT, manyc2rFFTW_Aligned_One) {
          nloop, ompT, iElaps * 1000);
 
   fftwf_destroy_plan(plan);
-  fftw_cleanup_threads();
+  fftwf_cleanup_threads();
   fftwf_free(xf);
   fftwf_free(xt);
 
@@ -499,12 +499,12 @@ TEST(TestDFT, AVX2c2c) {
   for (int i = 0; i < Iter; i++) {
     switch (nsamp) {
     case 32:
-      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                               num, num);
+      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec, num,
+                                num);
       break;
     case 64:
-      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                                num, num);
+      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec, num,
+                                num);
       break;
     case 128:
       m256::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
@@ -867,12 +867,12 @@ TEST(TestDFT, AVX512c2c) {
                                  num, num);
       break;
     case 1024:
-      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                  num, num);
+      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2,
+                                  nloop / nvec_512, num, num);
       break;
     }
   }
- double afterCodelet = cpuSecond();
+  double afterCodelet = cpuSecond();
 
   for (unsigned i = 0; i < nsamp / nvec_512; i++)
     for (unsigned j = 0; j < num; j++)
@@ -887,7 +887,6 @@ TEST(TestDFT, AVX512c2c) {
   printf("EAVX2r2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
          "scatter : %f \n",
          nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
-
 
   ::free(xf);
   ::free(xt);
