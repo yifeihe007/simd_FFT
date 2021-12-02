@@ -890,17 +890,18 @@ TEST(TestDFT, correctness) {
 
   ::posix_memalign((void**)(&xt), 64, byte_size);
   ::posix_memalign((void**)(&xf), 64, byte_size);
-  std::cerr << "init\n";
+
+  //Store values in vector
+  std::vector<float> values(2 * fft_size * batch_size);
+  for (int i = 0; i < values.size(); ++i)
+    values[i] = rand() / static_cast<double>(RAND_MAX);
+
   for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
-    xt[i] = _mm512_set1_ps(1.0f);
-    xf[i] = _mm512_set1_ps(0.0f);
+    xt[i] = _mm512_loadu_ps((const void*) &values[i * 16]);
   }
 
   m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
   std::vector<float> out_array(2 * fft_size * batch_size);
-  std::cerr << "Out array: " << 2 * fft_size * batch_size << "\n";
-  std::cerr << "Byte size: " << byte_size << "\n";
-  std::cerr << "byte size / sizeof(__m512): " << byte_size / sizeof(__m512) << "\n";
   for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
     _mm512_storeu_ps((void*) &out_array[i * 16], xf[i]);
   }
