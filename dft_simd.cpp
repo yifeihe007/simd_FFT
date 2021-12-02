@@ -337,28 +337,28 @@ TEST(TestDFT, AVX2r2c) {
   for (int i = 0; i < Iter; i++) {
     switch (nsamp) {
     case 32:
-      m256::dft_codelet_r2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / nvec,
-                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      m256::dft_codelet_r2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, 2, nloop / nvec,
+                                num, num);
       break;
     case 64:
-      m256::dft_codelet_r2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / nvec,
-                                (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      m256::dft_codelet_r2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, 2, nloop / nvec,
+                                num, num);
       break;
     case 128:
-      m256::dft_codelet_r2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / nvec,
-                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      m256::dft_codelet_r2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, 2, nloop / nvec,
+                                 num, num);
       break;
     case 256:
-      m256::dft_codelet_r2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / nvec,
-                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      m256::dft_codelet_r2cf_256(xt, xt + 1, xf, xf + 1, 2, 2, 2, nloop / nvec,
+                                 num, num);
       break;
     case 512:
-      m256::dft_codelet_r2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / nvec,
-                                 (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      m256::dft_codelet_r2cf_512(xt, xt + 1, xf, xf + 1, 2, 2, 2, nloop / nvec,
+                                 num, num);
       break;
     case 1024:
-      m256::dft_codelet_r2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, 1, nloop / nvec,
-                                  (nsamp / 2 + 1) * 2, (nsamp / 2 + 1) * 2);
+      m256::dft_codelet_r2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2, 2, nloop / nvec,
+                                  num, num);
       break;
     }
   }
@@ -499,28 +499,28 @@ TEST(TestDFT, AVX2c2c) {
   for (int i = 0; i < Iter; i++) {
     switch (nsamp) {
     case 32:
-      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
-                                (nsamp * 2), (nsamp * 2));
+      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
+                               num, num);
       break;
     case 64:
-      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
-                                (nsamp * 2), (nsamp * 2));
+      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
+                                num, num);
       break;
     case 128:
-      m256::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
-                                 (nsamp * 2), (nsamp * 2));
+      m256::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
+                                 num, num);
       break;
     case 256:
-      m256::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
-                                 (nsamp * 2), (nsamp * 2));
+      m256::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
+                                 num, num);
       break;
     case 512:
-      m256::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
-                                 (nsamp * 2), (nsamp * 2));
+      m256::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
+                                 num, num);
       break;
     case 1024:
-      m256::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 8,
-                                  (nsamp * 2), (nsamp * 2));
+      m256::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
+                                  num, num);
       break;
     }
   }
