@@ -20,7 +20,8 @@
 
 */
 
-//#include <fftw3.h>
+#include <fftw3.h>
+#include <cstring>
 #include <gtest/gtest.h>
 #include <immintrin.h>
 #include <iostream>
@@ -29,15 +30,20 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
+#include "utils.h"
+
 double cpuSecond() {
   struct timeval tp;
   gettimeofday(&tp, NULL);
   return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
 }
 
+
 constexpr int nvec = 8;
 constexpr int nvec_512 = 16;
 constexpr int Iter = 1000;
+
+#if 0
 TEST(TestDFT, manyc2cFFTW_Aligned_One) {
   char *nsampVar;
   char *nloopVar;
@@ -148,7 +154,7 @@ TEST(TestDFT, manyc2rFFTW_Aligned_One) {
 
   // omp_destroy_lock(&writelock);
 }
-
+#endif
 #if defined(__AVX__)
 
 using INT = int;
@@ -836,8 +842,8 @@ TEST(TestDFT, AVX512c2c) {
 
     for (unsigned j = 0; j < num; j++) {
 
-      xt[j + i * num] = _mm256_i32gather_ps(
-          (static_cast<float *>(in_data) + j + i * num * nvec_512), vIdx, 4);
+      xt[j + i * num] = _mm512_i32gather_ps(
+          vIdx, static_cast<void*>(in_data) + j + i * num * nvec_512, 4);
     }
 
   double afterGather = cpuSecond();
@@ -877,10 +883,10 @@ TEST(TestDFT, AVX512c2c) {
       for (unsigned k = 0; k < nvec_512; k++) {
         static_cast<float *>(out_data)[i * num * nvec_512 + k * num + j] =
             xf[j + i * num][k];
-
       }
 }
-TEST(TestDFT, correctness) {
+
+TEST(TestDFT, correctness_ones) {
   //c2c
   constexpr int fft_size = 32;
   constexpr int batch_size = 32;
@@ -894,23 +900,74 @@ TEST(TestDFT, correctness) {
   //Store values in vector
   std::vector<float> values(2 * fft_size * batch_size);
   for (int i = 0; i < values.size(); ++i)
-    values[i] = rand() / static_cast<double>(RAND_MAX);
+    values[i] = 1.0f;
 
+/*
   for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
     xt[i] = _mm512_loadu_ps((const void*) &values[i * 16]);
   }
+*/
+
+  avx512_gather(fft_size, batch_size, xt, &values[0]);
 
   m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
+
   std::vector<float> out_array(2 * fft_size * batch_size);
+/*
   for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
     _mm512_storeu_ps((void*) &out_array[i * 16], xf[i]);
   }
-
+*/
+  avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
   for (int i = 0; i < out_array.size(); i += 2) {
     std::cerr << "Real: " << out_array[i] << ", complex: " << out_array[i + 1] << "\n";
   }
 }
 
+TEST(TestDFT, correctness_fftw) {
+  //c2c
+  const int fft_size = 32;
+  const int batch_size = 32;
+  __m512* xt = nullptr;
+  __m512* xf = nullptr;
+  constexpr size_t byte_size = 2 * fft_size * batch_size * sizeof(float);
+
+  ::posix_memalign((void**)(&xt), 64, byte_size);
+  ::posix_memalign((void**)(&xf), 64, byte_size);
+
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_real_distribution<float> dist(-10.0, 10.0);
+  //Store values in vector
+  std::vector<float> values(2 * fft_size * batch_size);
+  for (int i = 0; i < values.size(); ++i) {
+    values[i] = dist(generator);
+  }
+  fftwf_complex* xt_fftw = fftwf_alloc_complex(fft_size * batch_size);
+  fftwf_complex* xf_fftw = fftwf_alloc_complex(fft_size * batch_size);
+
+  fftwf_plan plan = fftwf_plan_many_dft(
+      1, &fft_size, batch_size, xt_fftw, &fft_size, 1, fft_size,
+      xf_fftw, &fft_size, 1, fft_size, FFTW_FORWARD, FFTW_MEASURE);
+
+  for (int i = 0; i < values.size(); i += 2) {
+    xt_fftw[i / 2][0] = values[i];
+    xt_fftw[i / 2][1] = values[i + 1];
+  }
+
+  fftwf_execute(plan);
+
+  avx512_gather(fft_size, batch_size, xt, &values[0]);
+  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
+
+  std::vector<float> out_array(2 * fft_size * batch_size);
+  avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
+
+  for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
+    std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i] << ", complex: " << out_array[i + 1] << "\n";
+    std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i/2][0] << ", complex: " << xf_fftw[i/2][1] << "\n\n";
+  }
+}
 /*
 
 #include "dft_r2cb_60.c"

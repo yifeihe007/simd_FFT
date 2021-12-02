@@ -57,5 +57,7 @@ include_directories(gtest-1.8.0/include)
 
 set(GTEST_BOTH_LIBRARIES gtest gtest_main)
 
-add_executable(dft_simd dft_simd)
+add_executable(dft_simd dft_simd
+			   dft_simd.cpp
+			   utils.cpp)
 target_link_libraries(dft_simd ${EXTRA_LIBS} ${GTEST_BOTH_LIBRARIES})
