@@ -838,8 +838,8 @@ TEST(TestDFT, AVX512c2c) {
 
     for (unsigned j = 0; j < num; j++) {
 
-      xt[j + i * num] = _mm256_i32gather_ps(
-          (static_cast<float *>(in_data) + j + i * num * nvec_512), vIdx, 4);
+      xt[j + i * num] = _mm512_i32gather_ps(
+          vIdx, (static_cast<float *>(in_data) + j + i * num * nvec_512), 4);
     }
 
   double afterGather = cpuSecond();
