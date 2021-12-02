@@ -20,7 +20,7 @@
 
 */
 
-#include <fftw3.h>
+//#include <fftw3.h>
 #include <gtest/gtest.h>
 #include <immintrin.h>
 #include <iostream>
@@ -38,7 +38,6 @@ double cpuSecond() {
 constexpr int nvec = 8;
 constexpr int nvec_512 = 16;
 constexpr int Iter = 1000;
-
 TEST(TestDFT, manyc2cFFTW_Aligned_One) {
   char *nsampVar;
   char *nloopVar;
@@ -547,7 +546,6 @@ TEST(TestDFT, AVX2c2c) {
 }
 #endif
 
-#if defined(__AVX512F__)
 
 using INT = int;
 using stride = int;
@@ -879,6 +877,71 @@ TEST(TestDFT, AVX512c2c) {
       for (unsigned k = 0; k < nvec_512; k++) {
         static_cast<float *>(out_data)[i * num * nvec_512 + k * num + j] =
             xf[j + i * num][k];
+
+      }
+}
+TEST(TestDFT, correctness) {
+  //c2c
+  constexpr int fft_size = 32;
+  constexpr int batch_size = 32;
+  __m512* xt = nullptr;
+  __m512* xf = nullptr;
+  constexpr size_t byte_size = 2 * fft_size * batch_size * sizeof(float);
+
+  ::posix_memalign((void**)(&xt), 64, byte_size);
+  ::posix_memalign((void**)(&xf), 64, byte_size);
+  std::cerr << "init\n";
+  for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
+    xt[i] = _mm512_set1_ps(1.0f);
+    xf[i] = _mm512_set1_ps(0.0f);
+  }
+
+  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
+  std::vector<float> out_array(2 * fft_size * batch_size);
+  std::cerr << "Out array: " << 2 * fft_size * batch_size << "\n";
+  std::cerr << "Byte size: " << byte_size << "\n";
+  std::cerr << "byte size / sizeof(__m512): " << byte_size / sizeof(__m512) << "\n";
+  for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
+    _mm512_storeu_ps((void*) &out_array[i * 16], xf[i]);
+  }
+
+  for (int i = 0; i < out_array.size(); i += 2) {
+    std::cerr << "Real: " << out_array[i] << ", complex: " << out_array[i + 1] << "\n";
+  }
+}
+
+/*
+
+#include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
+
+} // namespace m256
+
+TEST(TestDFT, AVX2_512)
+{
+  __m512 *xt = nullptr;
+  __m512 *xf;
+
+  ::posix_memalign((void **)&xt, 64, nvec_512 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, nvec_512 * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i] =
+_mm512_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec_512; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp][ivec] = gen(core);
+    }
+  }
+  for (int iloop = 0; iloop < nloop; iloop++)
+  {
+    m512::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 2, 2, 2, 1, 0, 0);
+    if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[ifreq][0] << ' ';
       }
   double afterScatter = cpuSecond();
   double gather = afterGather - iStart;
@@ -895,7 +958,56 @@ TEST(TestDFT, AVX512c2c) {
   fftwf_free(out_data);
 }
 
-#endif
+namespace m512_Unroll2_FixedStride
+{
+
+  using E = std::pair<__m512, __m512>;
+  using R = std::pair<__m512, __m512>;
+
+  inline int WS(const stride s, const stride i) { return 2 * i; }
+
+#include "dft_r2cb_60.c"
+#include "dft_r2cf_60.c"
+
+} // namespace m256
+
+TEST(TestDFT, AVX512_Unroll2_FixedStride)
+{
+  std::pair<__m512, __m512> *xt = nullptr;
+  std::pair<__m512, __m512> *xf;
+  ::posix_memalign((void **)&xt, 64, 2 * nvec_512 * nsamp * sizeof(float));
+  ::posix_memalign((void **)&xf, 64, 2 * nvec_512 * 2 * (nsamp / 2 + 1) *
+sizeof(float)); for (unsigned i = 0; i < 2 * (nsamp / 2 + 1); i++) xf[i].first =
+xf[i].second = _mm512_setzero_ps(); std::mt19937 core(12345);
+  std::uniform_real_distribution<float> gen(0.0, 1.0);
+  for (int ivec = 0; ivec < nvec_512; ivec++)
+  {
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp].first[ivec] = gen(core);
+    }
+    for (int isamp = 0; isamp < nsamp; isamp++)
+    {
+      xt[isamp].second[ivec] = gen(core);
+    }
+  }
+  for (int iloop = 0; iloop < nloop / 2; iloop++)
+  {
+    m512_Unroll2_FixedStride::dft_codelet_r2cf_60(xt, xt + 1, xf, xf + 1, 0, 0,
+0, 1, 0, 0); if (iloop == 0)
+    {
+      for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
+      {
+        std::cout << xf[ifreq].first[0] << ' ';
+      }
+      std::cout << '\n';
+    }
+  }
+  ::free(xf);
+  ::free(xt);
+}*/
+
+
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
