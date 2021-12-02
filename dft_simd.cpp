@@ -457,7 +457,7 @@ TEST(TestDFT, AVX2c2r) {
   double gather = afterGather - iStart;
   double codelet = afterCodelet - afterGather;
   double scatter = afterScatter - afterCodelet;
-  printf("EAVX2r2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
+  printf("EAVX2c2r : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
          "scatter : %f \n",
          nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
   ::free(xf);
@@ -536,7 +536,7 @@ TEST(TestDFT, AVX2c2c) {
   double gather = afterGather - iStart;
   double codelet = afterCodelet - afterGather;
   double scatter = afterScatter - afterCodelet;
-  printf("EAVX2r2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
+  printf("EAVX2c2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
          "scatter : %f \n",
          nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
 
@@ -884,7 +884,7 @@ TEST(TestDFT, AVX512c2c) {
   double gather = afterGather - iStart;
   double codelet = afterCodelet - afterGather;
   double scatter = afterScatter - afterCodelet;
-  printf("EAVX2r2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
+  printf("EAVX512c2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
          "scatter : %f \n",
          nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
 
