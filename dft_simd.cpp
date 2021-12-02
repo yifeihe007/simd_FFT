@@ -818,49 +818,81 @@ TEST(TestDFT, AVX512c2c) {
   nloopVar = getenv("NLOOP");
   int nsamp = atoi(nsampVar);
   int nloop = atoi(nloopVar);
+  int num = nsamp * 2;
   // for (int i = 0; i < Iter; i++) {
   __m512 *xt = nullptr;
   __m512 *xf = nullptr;
   ::posix_memalign((void **)&xt, 64, nloop * 2 * nsamp * sizeof(float));
   ::posix_memalign((void **)&xf, 64, nloop * 2 * nsamp * sizeof(float));
+  float *in_data = fftwf_alloc_real(num * nloop);
+  float *out_data = fftwf_alloc_real(num * nloop);
 
   int ompT = omp_get_max_threads();
 
   double iStart = cpuSecond();
+
+  __m512i vIdx = _mm512_set_epi32(
+      num * 15, num * 14, num * 13, num * 12, num * 11, num * 10, num * 9,
+      num * 8, num * 7, num * 6, num * 5, num * 4, num * 3, num * 2, num, 0);
+  for (unsigned i = 0; i < nloop / nvec_512; i++)
+
+    for (unsigned j = 0; j < num; j++) {
+
+      xt[j + i * num] = _mm256_i32gather_ps(
+          (static_cast<float *>(in_data) + j + i * num * nvec_512), vIdx, 4);
+    }
+
+  double afterGather = cpuSecond();
+
   for (int i = 0; i < Iter; i++) {
     switch (nsamp) {
     case 32:
-      m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
-                                (nsamp * 2), (nsamp * 2));
+      m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
+                                num, num);
       break;
     case 64:
-      m512::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
-                                (nsamp * 2), (nsamp * 2));
+      m512::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
+                                num, num);
       break;
     case 128:
-      m512::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
-                                 (nsamp * 2), (nsamp * 2));
+      m512::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
+                                 num, num);
       break;
     case 256:
-      m512::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
-                                 (nsamp * 2), (nsamp * 2));
+      m512::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
+                                 num, num);
       break;
     case 512:
-      m512::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
-                                 (nsamp * 2), (nsamp * 2));
+      m512::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
+                                 num, num);
       break;
     case 1024:
-      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 1, 1, nloop / 16,
-                                  (nsamp * 2), (nsamp * 2));
+      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
+                                  num, num);
       break;
     }
   }
-  double iElaps = cpuSecond() - iStart;
-  printf("EAVX512c2c : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
-         nloop, ompT, iElaps * 1000);
+ double afterCodelet = cpuSecond();
+
+  for (unsigned i = 0; i < nsamp / nvec_512; i++)
+    for (unsigned j = 0; j < num; j++)
+      for (unsigned k = 0; k < nvec_512; k++) {
+        static_cast<float *>(out_data)[i * num * nvec_512 + k * num + j] =
+            xf[j + i * num][k];
+      }
+  double afterScatter = cpuSecond();
+  double gather = afterGather - iStart;
+  double codelet = afterCodelet - afterGather;
+  double scatter = afterScatter - afterCodelet;
+  printf("EAVX2r2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
+         "scatter : %f \n",
+         nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
+
 
   ::free(xf);
   ::free(xt);
+  fftwf_free(in_data);
+  fftwf_free(out_data);
 }
 
 #endif
