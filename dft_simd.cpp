@@ -124,8 +124,8 @@ TEST(TestDFT, manyc2cFFTW_Aligned_One) {
   // num = omp_get_max_threads();
   // k = omp_get_thread_num();
   // omp_set_lock(&writelock);
-  int fftw_init_threads(void);
-  void fftw_plan_with_nthreads(int ompT);
+  fftw_init_threads(void);
+  fftw_plan_with_nthreads(int ompT);
 
   float *xt = fftwf_alloc_real((nsamp * 2 + 2) * nloop * nvec);
   float *xf = fftwf_alloc_real((nsamp * 2 + 2) * nloop * nvec);
@@ -174,8 +174,8 @@ TEST(TestDFT, manyr2cFFTW_Aligned_One) {
   int nsamp = atoi(nsampVar);
   int nloop = atoi(nloopVar);
   int ompT = omp_get_max_threads();
-  int fftw_init_threads(void);
-  void fftw_plan_with_nthreads(int ompT);
+  fftw_init_threads(void);
+  fftw_plan_with_nthreads(int ompT);
 
   // omp_lock_t writelock;
   // omp_init_lock(&writelock);
@@ -224,8 +224,8 @@ TEST(TestDFT, manyc2rFFTW_Aligned_One) {
   int nsamp = atoi(nsampVar);
   int nloop = atoi(nloopVar);
   int ompT = omp_get_max_threads();
-  int fftw_init_threads(void);
-  void fftw_plan_with_nthreads(int ompT);
+  fftw_init_threads(void);
+  fftw_plan_with_nthreads(int ompT);
 
   // omp_lock_t writelock;
   // omp_init_lock(&writelock);
