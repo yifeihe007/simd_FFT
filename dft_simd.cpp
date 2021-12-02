@@ -156,6 +156,7 @@ for (int isamp = 0; isamp < nsamp; isamp++)
 std::cout << '\n';
 */
   fftwf_destroy_plan(plan);
+  fftw_cleanup_threads();
 
   // fftwf_free(xf[k]);
   // fftwf_free(xt[k]);
@@ -209,6 +210,7 @@ for (int isamp = 0; isamp < nsamp; isamp++)
 std::cout << '\n';
 */
   fftwf_destroy_plan(plan);
+  fftw_cleanup_threads();
   fftwf_free(xf);
   fftwf_free(xt);
 
@@ -259,6 +261,7 @@ for (int isamp = 0; isamp < nsamp; isamp++)
 std::cout << '\n';
 */
   fftwf_destroy_plan(plan);
+  fftw_cleanup_threads();
   fftwf_free(xf);
   fftwf_free(xt);
 
