@@ -957,15 +957,42 @@ TEST(TestDFT, correctness_fftw) {
 
   fftwf_execute(plan);
 
+  std::vector<float> out_array(2 * fft_size * batch_size);
   avx512_gather(fft_size, batch_size, xt, &values[0]);
   m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
 
-  std::vector<float> out_array(2 * fft_size * batch_size);
   avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
 
   for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
     std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i] << ", complex: " << out_array[i + 1] << "\n";
     std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i/2][0] << ", complex: " << xf_fftw[i/2][1] << "\n\n";
+  }
+}
+
+TEST(TestDFT, Gather_Scatter) {
+  constexpr int fft_size = 32;
+  constexpr int batch_size = 32;
+  constexpr int num_floats = 2 * fft_size * batch_size;
+  std::vector<float> vals(num_floats);
+  std::vector<float> vals_scattered(num_floats);
+
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_real_distribution<float> dist(-10.0, 10.0);
+
+  for (int i = 0; i < num_floats; ++i) {
+    vals[i] = dist(generator);
+  }
+
+  __m512* simd_arr = nullptr;
+
+  ::posix_memalign((void**)(&simd_arr), 64, num_floats * sizeof(float));
+  avx512_gather(fft_size, batch_size, simd_arr, &vals[0]);
+  avx512_scatter(fft_size, batch_size, simd_arr, &vals_scattered[0]);
+
+  for (int i = 0; i < num_floats; ++i) {
+    std::cerr << "x_before[" << i << "]\t= " << vals[i] << "\n";
+    std::cerr <<  "x_after[" << i << "]\t= " << vals_scattered[i] << "\n\n";
   }
 }
 /*
