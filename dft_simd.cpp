@@ -526,7 +526,7 @@ TEST(TestDFT, AVX2c2c) {
   }
   double afterCodelet = cpuSecond();
 
-  for (unsigned i = 0; i < nsamp / nvec; i++)
+  for (unsigned i = 0; i < nloop / nvec; i++)
     for (unsigned j = 0; j < num; j++)
       for (unsigned k = 0; k < nvec; k++) {
         static_cast<float *>(out_data)[i * num * nvec + k * num + j] =
@@ -874,7 +874,7 @@ TEST(TestDFT, AVX512c2c) {
   }
   double afterCodelet = cpuSecond();
 
-  for (unsigned i = 0; i < nsamp / nvec_512; i++)
+  for (unsigned i = 0; i < nloop / nvec_512; i++)
     for (unsigned j = 0; j < num; j++)
       for (unsigned k = 0; k < nvec_512; k++) {
         static_cast<float *>(out_data)[i * num * nvec_512 + k * num + j] =
