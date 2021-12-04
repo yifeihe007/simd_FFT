@@ -885,10 +885,9 @@ TEST(TestDFT, AVX512c2c) {
   double gather = afterGather - iStart;
   double codelet = afterCodelet - afterGather;
   double scatter = afterScatter - afterCodelet;
-  printf(
-      "EAVX512c2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
-      "scatter : %f \n",
-      nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
+  printf("EAVX512c2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : "
+         "%f scatter : %f \n",
+         nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
 
   ::free(xf);
   ::free(xt);
