@@ -51,12 +51,25 @@ TEST(TestDFT, manyc2cFFTW_Aligned_One) {
   fftwf_init_threads();
   fftwf_plan_with_nthreads(ompT);
 
-  float *xt = fftwf_alloc_real((nsamp * 2 + 2) * nloop);
-  float *xf = fftwf_alloc_real((nsamp * 2 + 2) * nloop);
+  fftwf_complex *xt = fftwf_alloc_complex(nsamp * nloop);
+  fftwf_complex *xf = fftwf_alloc_complex(nsamp * nloop);
 
-  fftwf_plan plan = fftwf_plan_many_dft(
-      1, &nsamp, nloop, (fftwf_complex *)xt, nullptr, 1, (nsamp + 1),
-      (fftwf_complex *)xf, nullptr, 1, nsamp + 1, FFTW_FORWARD, FFTW_MEASURE);
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_real_distribution<float> dist(-10.0, 10.0);
+  // Store values in vector
+  std::vector<float> values(2 * nsamp * nloop);
+  for (int i = 0; i < values.size(); ++i) {
+    values[i] = dist(generator);
+  }
+  for (int i = 0; i < values.size(); i += 2) {
+    xt[i / 2][0] = values[i];
+    xt[i / 2][1] = values[i + 1];
+  }
+
+  fftwf_plan plan =
+      fftwf_plan_many_dft(1, &nsamp, nloop, xt, nullptr, 1, nsamp, xf, nullptr,
+                          1, nsamp, FFTW_FORWARD, FFTW_MEASURE);
 
   double iStart = cpuSecond();
 
@@ -478,10 +491,23 @@ TEST(TestDFT, AVX2c2c) {
   // for (int i = 0; i < Iter; i++) {
   __m256 *xt = nullptr;
   __m256 *xf = nullptr;
-  float *in_data = fftwf_alloc_real(num * nloop);
-  float *out_data = fftwf_alloc_real(num * nloop);
   ::posix_memalign((void **)&xt, 32, nloop * num * sizeof(float));
   ::posix_memalign((void **)&xf, 32, nloop * num * sizeof(float));
+
+  fftwf_complex *in_data = fftwf_alloc_complex(nsamp * nloop);
+  fftwf_complex *out_data = fftwf_alloc_complex(nsamp * nloop);
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_real_distribution<float> dist(-10.0, 10.0);
+  // Store values in vector
+  std::vector<float> values(2 * nsamp * nloop);
+  for (int i = 0; i < values.size(); ++i) {
+    values[i] = dist(generator);
+  }
+  for (int i = 0; i < values.size(); i += 2) {
+    in_data[i / 2][0] = values[i];
+    in_data[i / 2][1] = values[i + 1];
+  }
 
   double iStart = cpuSecond();
 
@@ -825,8 +851,21 @@ TEST(TestDFT, AVX512c2c) {
   __m512 *xf = nullptr;
   ::posix_memalign((void **)&xt, 64, nloop * 2 * nsamp * sizeof(float));
   ::posix_memalign((void **)&xf, 64, nloop * 2 * nsamp * sizeof(float));
-  float *in_data = fftwf_alloc_real(num * nloop);
-  float *out_data = fftwf_alloc_real(num * nloop);
+  
+  fftwf_complex *in_data = fftwf_alloc_complex(nsamp * nloop);
+  fftwf_complex *out_data = fftwf_alloc_complex(nsamp * nloop);
+  std::random_device rd;
+  std::mt19937 generator(rd());
+  std::uniform_real_distribution<float> dist(-10.0, 10.0);
+  // Store values in vector
+  std::vector<float> values(2 * nsamp * nloop);
+  for (int i = 0; i < values.size(); ++i) {
+    values[i] = dist(generator);
+  }
+  for (int i = 0; i < values.size(); i += 2) {
+    in_data[i / 2][0] = values[i];
+    in_data[i / 2][1] = values[i + 1];
+  }
 
   int ompT = omp_get_max_threads();
 
