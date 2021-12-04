@@ -663,7 +663,8 @@ inline std::pair<__m512, __m512> FNMS(const __m512 &a,
 }
 
 #define DK(name, val)                                                          \
-  static const __m512 name = {(val), (val), (val), (val),                      \
+  static const __m512 name = {(val), (val), (val), (val), (val), (val),        \
+                              (val), (val), (val), (val), (val), (val),        \
                               (val), (val), (val), (val)}
 
 namespace m512 {
@@ -884,9 +885,10 @@ TEST(TestDFT, AVX512c2c) {
   double gather = afterGather - iStart;
   double codelet = afterCodelet - afterGather;
   double scatter = afterScatter - afterCodelet;
-  printf("EAVX512c2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
-         "scatter : %f \n",
-         nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
+  printf(
+      "EAVX512c2c : nsamp : %d nloop : %d ompT : %d gather : %f codelet : %f "
+      "scatter : %f \n",
+      nsamp, nloop, ompT, gather * 1000, codelet * 1000, scatter * 1000);
 
   ::free(xf);
   ::free(xt);
