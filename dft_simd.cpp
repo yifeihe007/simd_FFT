@@ -499,19 +499,14 @@ TEST(TestDFT, AVX2c2c) {
   ::posix_memalign((void **)&xt, 32, nloop * num * sizeof(float));
   ::posix_memalign((void **)&xf, 32, nloop * num * sizeof(float));
 
-  fftwf_complex *in_data = fftwf_alloc_complex(nsamp * nloop);
-  fftwf_complex *out_data = fftwf_alloc_complex(nsamp * nloop);
   std::random_device rd;
   std::mt19937 generator(rd());
   std::uniform_real_distribution<float> dist(-10.0, 10.0);
   // Store values in vector
   std::vector<float> values(2 * nsamp * nloop);
+  std::vector<float> out_array(2 * fft_size * batch_size);
   for (int i = 0; i < values.size(); ++i) {
     values[i] = dist(generator);
-  }
-  for (int i = 0; i < values.size(); i += 2) {
-    in_data[i / 2][0] = values[i];
-    in_data[i / 2][1] = values[i + 1];
   }
 
   using namespace std::chrono;
@@ -520,11 +515,10 @@ TEST(TestDFT, AVX2c2c) {
   __m256i vIdx = _mm256_set_epi32(num * 7, num * 6, num * 5, num * 4, num * 3,
                                   num * 2, num, 0);
   for (unsigned i = 0; i < nloop / nvec; i++)
-
     for (unsigned j = 0; j < num; j++) {
-
+      float *ptr = &values[0] + j + i * num * nvec;
       xt[j + i * num] = _mm256_i32gather_ps(
-          (static_cast<float *>(in_data) + j + i * num * nvec), vIdx, 4);
+          (static_cast<void *>(ptr), vIdx, 4);
     }
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
@@ -562,8 +556,7 @@ TEST(TestDFT, AVX2c2c) {
   for (unsigned i = 0; i < nloop / nvec; i++)
     for (unsigned j = 0; j < num; j++)
       for (unsigned k = 0; k < nvec; k++) {
-        static_cast<float *>(out_data)[i * num * nvec + k * num + j] =
-            xf[j + i * num][k];
+        out_array[i * num * nvec + k * num + j] = xf[j + i * num][k];
       }
   high_resolution_clock::time_point afterScatter = high_resolution_clock::now();
 
@@ -578,8 +571,6 @@ TEST(TestDFT, AVX2c2c) {
 
   ::free(xf);
   ::free(xt);
-  fftwf_free(in_data);
-  fftwf_free(out_data);
 }
 #endif
 
@@ -862,19 +853,14 @@ TEST(TestDFT, AVX512c2c) {
   ::posix_memalign((void **)&xt, 64, nloop * 2 * nsamp * sizeof(float));
   ::posix_memalign((void **)&xf, 64, nloop * 2 * nsamp * sizeof(float));
 
-  fftwf_complex *in_data = fftwf_alloc_complex(nsamp * nloop);
-  fftwf_complex *out_data = fftwf_alloc_complex(nsamp * nloop);
   std::random_device rd;
   std::mt19937 generator(rd());
   std::uniform_real_distribution<float> dist(-10.0, 10.0);
   // Store values in vector
   std::vector<float> values(2 * nsamp * nloop);
+  std::vector<float> out_array(2 * nsamp * nloop);
   for (int i = 0; i < values.size(); ++i) {
     values[i] = dist(generator);
-  }
-  for (int i = 0; i < values.size(); i += 2) {
-    in_data[i / 2][0] = values[i];
-    in_data[i / 2][1] = values[i + 1];
   }
 
   int ompT = omp_get_max_threads();
@@ -888,9 +874,8 @@ TEST(TestDFT, AVX512c2c) {
   for (unsigned i = 0; i < nloop / nvec_512; i++)
 
     for (unsigned j = 0; j < num; j++) {
-
-      xt[j + i * num] = _mm512_i32gather_ps(
-          vIdx, (static_cast<float *>(in_data) + j + i * num * nvec_512), 4);
+      float *ptr = &values[0] + j + i * num * nvec_512;
+      xt[j + i * num] = _mm512_i32gather_ps(vIdx, static_cast<void *>(ptr), 4);
     }
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
@@ -927,8 +912,7 @@ TEST(TestDFT, AVX512c2c) {
   for (unsigned i = 0; i < nloop / nvec_512; i++)
     for (unsigned j = 0; j < num; j++)
       for (unsigned k = 0; k < nvec_512; k++) {
-        static_cast<float *>(out_data)[i * num * nvec_512 + k * num + j] =
-            xf[j + i * num][k];
+        out_array[i * num * nvec_512 + k * num + j] = xf[j + i * num][k];
       }
   high_resolution_clock::time_point afterScatter = high_resolution_clock::now();
 
@@ -943,8 +927,6 @@ TEST(TestDFT, AVX512c2c) {
 
   ::free(xf);
   ::free(xt);
-  fftwf_free(in_data);
-  fftwf_free(out_data);
 }
 
 #endif
