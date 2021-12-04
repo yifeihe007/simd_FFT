@@ -504,7 +504,7 @@ TEST(TestDFT, AVX2c2c) {
   std::uniform_real_distribution<float> dist(-10.0, 10.0);
   // Store values in vector
   std::vector<float> values(2 * nsamp * nloop);
-  std::vector<float> out_array(2 * fft_size * batch_size);
+  std::vector<float> out_array(2 * nsamp * nloop);
   for (int i = 0; i < values.size(); ++i) {
     values[i] = dist(generator);
   }
@@ -517,8 +517,7 @@ TEST(TestDFT, AVX2c2c) {
   for (unsigned i = 0; i < nloop / nvec; i++)
     for (unsigned j = 0; j < num; j++) {
       float *ptr = &values[0] + j + i * num * nvec;
-      xt[j + i * num] = _mm256_i32gather_ps(
-          (static_cast<void *>(ptr), vIdx, 4);
+      xt[j + i * num] = _mm256_i32gather_ps(ptr, vIdx, 4);
     }
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
