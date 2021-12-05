@@ -1,0 +1,21 @@
+diff --git a/dft_simd.cpp b/dft_simd.cpp
+index 0ccffe6..5066e20 100644
+--- a/dft_simd.cpp
++++ b/dft_simd.cpp
+@@ -168,7 +168,7 @@ TEST(TestDFT, manyc2rFFTW_Aligned_One) {
+   // omp_destroy_lock(&writelock);
+ }
+ 
+-#if defined(__AVX__)
++#if 0
+ 
+ using INT = int;
+ using stride = int;
+@@ -692,6 +692,7 @@ inline std::pair<__m512, __m512> FNMS(const __m512 &a,
+   static const __m512 name = {(val), (val), (val), (val), (val), (val),        \
+                               (val), (val), (val), (val), (val), (val),        \
+                               (val), (val), (val), (val)}
++inline void MAKE_VOLATILE_STRIDE(int a, int b) {}
+ 
+ namespace m512 {
+ 
