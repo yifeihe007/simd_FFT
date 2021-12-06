@@ -20,8 +20,8 @@
 
 */
 
-#include <fftw3.h>
 #include <cstring>
+#include <fftw3.h>
 #include <gtest/gtest.h>
 #include <immintrin.h>
 #include <iostream>
@@ -37,7 +37,6 @@ double cpuSecond() {
   gettimeofday(&tp, NULL);
   return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
 }
-
 
 constexpr int nvec = 8;
 constexpr int nvec_512 = 16;
@@ -504,12 +503,12 @@ TEST(TestDFT, AVX2c2c) {
   for (int i = 0; i < Iter; i++) {
     switch (nsamp) {
     case 32:
-      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                               num, num);
+      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec, num,
+                                num);
       break;
     case 64:
-      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                                num, num);
+      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec, num,
+                                num);
       break;
     case 128:
       m256::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
@@ -551,7 +550,6 @@ TEST(TestDFT, AVX2c2c) {
   fftwf_free(out_data);
 }
 #endif
-
 
 using INT = int;
 using stride = int;
@@ -667,7 +665,8 @@ inline std::pair<__m512, __m512> FNMS(const __m512 &a,
 }
 
 #define DK(name, val)                                                          \
-  static const __m512 name = {(val), (val), (val), (val),                      \
+  static const __m512 name = {(val), (val), (val), (val), (val), (val),        \
+                              (val), (val), (val), (val), (val), (val),        \
                               (val), (val), (val), (val)}
 
 namespace m512 {
@@ -843,7 +842,7 @@ TEST(TestDFT, AVX512c2c) {
     for (unsigned j = 0; j < num; j++) {
 
       xt[j + i * num] = _mm512_i32gather_ps(
-          vIdx, static_cast<void*>(in_data) + j + i * num * nvec_512, 4);
+          vIdx, static_cast<void *>(in_data) + j + i * num * nvec_512, 4);
     }
 
   double afterGather = cpuSecond();
@@ -871,12 +870,12 @@ TEST(TestDFT, AVX512c2c) {
                                  num, num);
       break;
     case 1024:
-      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                  num, num);
+      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2,
+                                  nloop / nvec_512, num, num);
       break;
     }
   }
- double afterCodelet = cpuSecond();
+  double afterCodelet = cpuSecond();
 
   for (unsigned i = 0; i < nsamp / nvec_512; i++)
     for (unsigned j = 0; j < num; j++)
@@ -887,68 +886,70 @@ TEST(TestDFT, AVX512c2c) {
 }
 
 TEST(TestDFT, correctness_ones) {
-  //c2c
+  // c2c
   constexpr int fft_size = 32;
   constexpr int batch_size = 32;
-  __m512* xt = nullptr;
-  __m512* xf = nullptr;
+  __m512 *xt = nullptr;
+  __m512 *xf = nullptr;
   constexpr size_t byte_size = 2 * fft_size * batch_size * sizeof(float);
 
-  ::posix_memalign((void**)(&xt), 64, byte_size);
-  ::posix_memalign((void**)(&xf), 64, byte_size);
+  ::posix_memalign((void **)(&xt), 64, byte_size);
+  ::posix_memalign((void **)(&xf), 64, byte_size);
 
-  //Store values in vector
+  // Store values in vector
   std::vector<float> values(2 * fft_size * batch_size);
   for (int i = 0; i < values.size(); ++i)
     values[i] = 1.0f;
 
-/*
-  for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
-    xt[i] = _mm512_loadu_ps((const void*) &values[i * 16]);
-  }
-*/
+  /*
+    for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
+      xt[i] = _mm512_loadu_ps((const void*) &values[i * 16]);
+    }
+  */
 
   avx512_gather(fft_size, batch_size, xt, &values[0]);
 
-  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
+  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16,
+                            (2 * fft_size), (2 * fft_size));
 
   std::vector<float> out_array(2 * fft_size * batch_size);
-/*
-  for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
-    _mm512_storeu_ps((void*) &out_array[i * 16], xf[i]);
-  }
-*/
+  /*
+    for (int i = 0; i < (byte_size / sizeof(__m512)); ++i) {
+      _mm512_storeu_ps((void*) &out_array[i * 16], xf[i]);
+    }
+  */
   avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
   for (int i = 0; i < out_array.size(); i += 2) {
-    std::cerr << "Real: " << out_array[i] << ", complex: " << out_array[i + 1] << "\n";
+    std::cerr << "Real: " << out_array[i] << ", complex: " << out_array[i + 1]
+              << "\n";
   }
 }
 
 TEST(TestDFT, correctness_fftw) {
-  //c2c
+  // c2c
   const int fft_size = 32;
   const int batch_size = 32;
-  __m512* xt = nullptr;
-  __m512* xf = nullptr;
+  __m512 *xt = nullptr;
+  __m512 *xf = nullptr;
   constexpr size_t byte_size = 2 * fft_size * batch_size * sizeof(float);
 
-  ::posix_memalign((void**)(&xt), 64, byte_size);
-  ::posix_memalign((void**)(&xf), 64, byte_size);
+  ::posix_memalign((void **)(&xt), 64, byte_size);
+  ::posix_memalign((void **)(&xf), 64, byte_size);
 
   std::random_device rd;
   std::mt19937 generator(rd());
   std::uniform_real_distribution<float> dist(-10.0, 10.0);
-  //Store values in vector
+  // Store values in vector
   std::vector<float> values(2 * fft_size * batch_size);
   for (int i = 0; i < values.size(); ++i) {
     values[i] = dist(generator);
   }
-  fftwf_complex* xt_fftw = fftwf_alloc_complex(fft_size * batch_size);
-  fftwf_complex* xf_fftw = fftwf_alloc_complex(fft_size * batch_size);
+  fftwf_complex *xt_fftw = fftwf_alloc_complex(fft_size * batch_size);
+  fftwf_complex *xf_fftw = fftwf_alloc_complex(fft_size * batch_size);
 
   fftwf_plan plan = fftwf_plan_many_dft(
-      1, &fft_size, batch_size, xt_fftw, &fft_size, 1, fft_size,
-      xf_fftw, &fft_size, 1, fft_size, FFTW_FORWARD, FFTW_MEASURE);
+      1, &fft_size, batch_size, xt_fftw, &fft_size, 1, fft_size, xf_fftw,
+      &fft_size, 1, fft_size, FFTW_FORWARD, FFTW_MEASURE);
 
   for (int i = 0; i < values.size(); i += 2) {
     xt_fftw[i / 2][0] = values[i];
@@ -959,13 +960,19 @@ TEST(TestDFT, correctness_fftw) {
 
   std::vector<float> out_array(2 * fft_size * batch_size);
   avx512_gather(fft_size, batch_size, xt, &values[0]);
-  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16, (2 * fft_size), (2 * fft_size));
+  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16,
+                            (2 * fft_size), (2 * fft_size));
 
   avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
 
   for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
-    std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i] << ", complex: " << out_array[i + 1] << "\n";
-    std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i/2][0] << ", complex: " << xf_fftw[i/2][1] << "\n\n";
+    if ((out_array[i] != xf_fftw[i / 2][0]) ||
+        (out_array[i + 1] != xf_fftw[i / 2][1])) {
+      std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i]
+                << ", complex: " << out_array[i + 1] << "\n";
+      std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i / 2][0]
+                << ", complex: " << xf_fftw[i / 2][1] << "\n\n";
+    }
   }
 }
 
@@ -984,15 +991,15 @@ TEST(TestDFT, Gather_Scatter) {
     vals[i] = dist(generator);
   }
 
-  __m512* simd_arr = nullptr;
+  __m512 *simd_arr = nullptr;
 
-  ::posix_memalign((void**)(&simd_arr), 64, num_floats * sizeof(float));
+  ::posix_memalign((void **)(&simd_arr), 64, num_floats * sizeof(float));
   avx512_gather(fft_size, batch_size, simd_arr, &vals[0]);
   avx512_scatter(fft_size, batch_size, simd_arr, &vals_scattered[0]);
 
   for (int i = 0; i < num_floats; ++i) {
     std::cerr << "x_before[" << i << "]\t= " << vals[i] << "\n";
-    std::cerr <<  "x_after[" << i << "]\t= " << vals_scattered[i] << "\n\n";
+    std::cerr << "x_after[" << i << "]\t= " << vals_scattered[i] << "\n\n";
   }
 }
 /*
@@ -1091,8 +1098,6 @@ xf[i].second = _mm512_setzero_ps(); std::mt19937 core(12345);
   ::free(xf);
   ::free(xt);
 }*/
-
-
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
