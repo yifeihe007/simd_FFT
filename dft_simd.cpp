@@ -20,6 +20,7 @@
 
 */
 
+#include "utils.h"
 #include <chrono>
 #include <fftw3.h>
 #include <gtest/gtest.h>
@@ -29,7 +30,6 @@
 #include <random>
 #include <stdlib.h>
 #include <sys/time.h>
-#include "utils.h"
 
 double cpuSecond() {
   struct timeval tp;
@@ -171,37 +171,7 @@ TEST(TestDFT, manyc2rFFTW_Aligned_One) {
 
 #if defined(__AVX__)
 
-#include "avx2_intrinsics.h"
-inline void MAKE_VOLATILE_STRIDE(int a, int b) {}
-
-namespace m256 {
-
-using E = __m256;
-using R = __m256;
-
-inline int WS(const stride s, const stride i) { return s * i; }
-
-#include "dft_c2cf_1024.c"
-#include "dft_c2cf_128.c"
-#include "dft_c2cf_256.c"
-#include "dft_c2cf_32.c"
-#include "dft_c2cf_512.c"
-#include "dft_c2cf_64.c"
-#include "dft_c2r_1024.c"
-#include "dft_c2r_128.c"
-#include "dft_c2r_256.c"
-#include "dft_c2r_32.c"
-#include "dft_c2r_512.c"
-#include "dft_c2r_64.c"
-#include "dft_r2cf_1024.c"
-#include "dft_r2cf_128.c"
-#include "dft_r2cf_256.c"
-#include "dft_r2cf_32.c"
-#include "dft_r2cf_512.c"
-#include "dft_r2cf_64.c"
-
-} // namespace m256
-
+/*
 TEST(TestDFT, AVX2r2c) {
 
   char *nsampVar;
@@ -368,7 +338,7 @@ TEST(TestDFT, AVX2c2r) {
   ::free(xt);
   fftwf_free(in_data);
   fftwf_free(out_data);
-}
+}*/
 TEST(TestDFT, AVX2c2c) {
   char *nsampVar;
   char *nloopVar;
@@ -409,41 +379,16 @@ TEST(TestDFT, AVX2c2c) {
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
 
   for (int i = 0; i < Iter; i++) {
-    switch (nsamp) {
-    case 32:
-      m256::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec, num,
-                                num);
-      break;
-    case 64:
-      m256::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec, num,
-                                num);
-      break;
-    case 128:
-      m256::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                                 num, num);
-      break;
-    case 256:
-      m256::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                                 num, num);
-      break;
-    case 512:
-      m256::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                                 num, num);
-      break;
-    case 1024:
-      m256::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec,
-                                  num, num);
-      break;
-    }
+    AVX2DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, nloop, num, num, nsamp);
   }
   high_resolution_clock::time_point afterCodelet = high_resolution_clock::now();
   avx2_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
-/*
-  for (unsigned i = 0; i < nloop / nvec; i++)
-    for (unsigned j = 0; j < num; j++)
-      for (unsigned k = 0; k < nvec; k++) {
-        out_array[i * num * nvec + k * num + j] = xf[j + i * num][k];
-      }*/
+  /*
+    for (unsigned i = 0; i < nloop / nvec; i++)
+      for (unsigned j = 0; j < num; j++)
+        for (unsigned k = 0; k < nvec; k++) {
+          out_array[i * num * nvec + k * num + j] = xf[j + i * num][k];
+        }*/
   high_resolution_clock::time_point afterScatter = high_resolution_clock::now();
 
   duration<double, std::milli> gather = afterGather - iStart;
@@ -462,37 +407,7 @@ TEST(TestDFT, AVX2c2c) {
 #endif
 
 #if defined(__AVX512F__)
-
-#include "avx512_intrinsics.h"
-
-namespace m512 {
-
-using E = __m512;
-using R = __m512;
-
-inline int WS(const stride s, const stride i) { return s * i; }
-
-#include "dft_c2cf_1024.c"
-#include "dft_c2cf_128.c"
-#include "dft_c2cf_256.c"
-#include "dft_c2cf_32.c"
-#include "dft_c2cf_512.c"
-#include "dft_c2cf_64.c"
-#include "dft_c2r_1024.c"
-#include "dft_c2r_128.c"
-#include "dft_c2r_256.c"
-#include "dft_c2r_32.c"
-#include "dft_c2r_512.c"
-#include "dft_c2r_64.c"
-#include "dft_r2cf_1024.c"
-#include "dft_r2cf_128.c"
-#include "dft_r2cf_256.c"
-#include "dft_r2cf_32.c"
-#include "dft_r2cf_512.c"
-#include "dft_r2cf_64.c"
-
-} // namespace m512
-
+/*
 TEST(TestDFT, AVX512r2c) {
 
   char *nsampVar;
@@ -544,15 +459,7 @@ TEST(TestDFT, AVX512r2c) {
   double iElaps = cpuSecond() - iStart;
   printf("EAVX512r2c : nsamp : %d nloop : %d ompT : %d iElaps : %f \n", nsamp,
          nloop, ompT, iElaps * 1000);
-  /*  if (iloop == 0)
-  {
-    for (int ifreq = 0; ifreq < 2 * (nsamp / 2 + 1); ifreq++)
-    {
-      std::cout << xf[ifreq][0] << ' ';
-    }
-    std::cout << '\n';
-  }
-//}*/
+
   ::free(xf);
   ::free(xt);
 }
@@ -609,7 +516,7 @@ TEST(TestDFT, AVX512c2r) {
 
   ::free(xf);
   ::free(xt);
-}
+}*/
 TEST(TestDFT, AVX512c2c) {
   char *nsampVar;
   char *nloopVar;
@@ -640,45 +547,10 @@ TEST(TestDFT, AVX512c2c) {
   high_resolution_clock::time_point iStart = high_resolution_clock::now();
   avx512_c2c_gather(nsamp, nloop, xt, &values[0]);
 
-  /*__m512i vIdx = _mm512_set_epi32(
-      num * 15, num * 14, num * 13, num * 12, num * 11, num * 10, num * 9,
-      num * 8, num * 7, num * 6, num * 5, num * 4, num * 3, num * 2, num, 0);
-  for (unsigned i = 0; i < nloop / nvec_512; i++)
-
-    for (unsigned j = 0; j < num; j++) {
-      float *ptr = &values[0] + j + i * num * nvec_512;
-      xt[j + i * num] = _mm512_i32gather_ps(vIdx, static_cast<void *>(ptr), 4);
-    }*/
-
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
 
   for (int i = 0; i < Iter; i++) {
-    switch (nsamp) {
-    case 32:
-      m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                num, num);
-      break;
-    case 64:
-      m512::dft_codelet_c2cf_64(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                num, num);
-      break;
-    case 128:
-      m512::dft_codelet_c2cf_128(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                 num, num);
-      break;
-    case 256:
-      m512::dft_codelet_c2cf_256(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                 num, num);
-      break;
-    case 512:
-      m512::dft_codelet_c2cf_512(xt, xt + 1, xf, xf + 1, 2, 2, nloop / nvec_512,
-                                 num, num);
-      break;
-    case 1024:
-      m512::dft_codelet_c2cf_1024(xt, xt + 1, xf, xf + 1, 2, 2,
-                                  nloop / nvec_512, num, num);
-      break;
-    }
+    AVX512DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, nloop, num, num, nsamp);
   }
   high_resolution_clock::time_point afterCodelet = high_resolution_clock::now();
   avx512_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
@@ -745,7 +617,7 @@ TEST(TestDFT, correctness_fftw) {
 
   for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
     if (std::abs(out_array[i] - xf_fftw[i / 2][0]) > 1e-4 ||
-         std::abs(out_array[i + 1] - xf_fftw[i / 2][1]) > 1e-4) {
+        std::abs(out_array[i + 1] - xf_fftw[i / 2][1]) > 1e-4) {
       std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i]
                 << ", complex: " << out_array[i + 1] << "\n";
       std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i / 2][0]
