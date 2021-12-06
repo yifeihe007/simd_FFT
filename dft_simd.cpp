@@ -737,11 +737,11 @@ TEST(TestDFT, correctness_fftw) {
   fftwf_execute(plan);
 
   std::vector<float> out_array(2 * fft_size * batch_size);
-  avx512_gather(fft_size, batch_size, xt, &values[0]);
+  avx512_c2c_gather(fft_size, batch_size, xt, &values[0]);
   m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16,
                             (2 * fft_size), (2 * fft_size));
 
-  avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
+  avx512_c2c_scatter(fft_size, batch_size, xf, &out_array[0]);
 
   for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
     if (std::abs(out_array[i] - xf_fftw[i / 2][0]) > 1e-4 ||
