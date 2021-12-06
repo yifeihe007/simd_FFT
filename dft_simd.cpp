@@ -29,6 +29,7 @@
 #include <random>
 #include <stdlib.h>
 #include <sys/time.h>
+#include "utils.h"
 
 double cpuSecond() {
   struct timeval tp;
@@ -396,14 +397,14 @@ TEST(TestDFT, AVX2c2c) {
 
   using namespace std::chrono;
   high_resolution_clock::time_point iStart = high_resolution_clock::now();
-
-  __m256i vIdx = _mm256_set_epi32(num * 7, num * 6, num * 5, num * 4, num * 3,
+  avx2_c2c_gather(nsamp, nloop, xt, &values[0]);
+  /*__m256i vIdx = _mm256_set_epi32(num * 7, num * 6, num * 5, num * 4, num * 3,
                                   num * 2, num, 0);
   for (unsigned i = 0; i < nloop / nvec; i++)
     for (unsigned j = 0; j < num; j++) {
       float *ptr = &values[0] + j + i * num * nvec;
       xt[j + i * num] = _mm256_i32gather_ps(ptr, vIdx, 4);
-    }
+    }*/
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
 
@@ -436,12 +437,13 @@ TEST(TestDFT, AVX2c2c) {
     }
   }
   high_resolution_clock::time_point afterCodelet = high_resolution_clock::now();
-
+  avx2_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
+/*
   for (unsigned i = 0; i < nloop / nvec; i++)
     for (unsigned j = 0; j < num; j++)
       for (unsigned k = 0; k < nvec; k++) {
         out_array[i * num * nvec + k * num + j] = xf[j + i * num][k];
-      }
+      }*/
   high_resolution_clock::time_point afterScatter = high_resolution_clock::now();
 
   duration<double, std::milli> gather = afterGather - iStart;
@@ -636,8 +638,9 @@ TEST(TestDFT, AVX512c2c) {
 
   using namespace std::chrono;
   high_resolution_clock::time_point iStart = high_resolution_clock::now();
+  avx512_c2c_gather(nsamp, nloop, xt, &values[0]);
 
-  __m512i vIdx = _mm512_set_epi32(
+  /*__m512i vIdx = _mm512_set_epi32(
       num * 15, num * 14, num * 13, num * 12, num * 11, num * 10, num * 9,
       num * 8, num * 7, num * 6, num * 5, num * 4, num * 3, num * 2, num, 0);
   for (unsigned i = 0; i < nloop / nvec_512; i++)
@@ -645,7 +648,7 @@ TEST(TestDFT, AVX512c2c) {
     for (unsigned j = 0; j < num; j++) {
       float *ptr = &values[0] + j + i * num * nvec_512;
       xt[j + i * num] = _mm512_i32gather_ps(vIdx, static_cast<void *>(ptr), 4);
-    }
+    }*/
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
 
@@ -678,11 +681,13 @@ TEST(TestDFT, AVX512c2c) {
     }
   }
   high_resolution_clock::time_point afterCodelet = high_resolution_clock::now();
-  for (unsigned i = 0; i < nloop / nvec_512; i++)
+  avx512_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
+
+  /*for (unsigned i = 0; i < nloop / nvec_512; i++)
     for (unsigned j = 0; j < num; j++)
       for (unsigned k = 0; k < nvec_512; k++) {
         out_array[i * num * nvec_512 + k * num + j] = xf[j + i * num][k];
-      }
+      }*/
   high_resolution_clock::time_point afterScatter = high_resolution_clock::now();
 
   duration<double, std::milli> gather = afterGather - iStart;
