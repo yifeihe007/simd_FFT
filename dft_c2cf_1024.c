@@ -264,8 +264,7 @@ DK(KP668178637, +0.668178637919298919997757686523080761552472251);
 DK(KP707106781, +0.707106781186547524400844362104849039284835938);
 {
 INT i;
-#pragma omp parallel for
-for (i = v; i > 0; i = i - 1){
+for (i = v; i > 0; i = i - 1, ri = ri + ivs, ii = ii + ivs, ro = ro + ovs, io = io + ovs, MAKE_VOLATILE_STRIDE(4096, is), MAKE_VOLATILE_STRIDE(4096, os)){
 E T5wJ, T5Uj, T5Jh, T5Zn, T44t, T5lH, T4F1, T55B, T4tZ, T5gD, T4K5, T4V7, T5wQ, T5Zo, T5Jk;
 E T5Uk, TOA, T1Ts, T1Do, T1Oo, T24A, T2v4, T2f0, T2q0, T4Ve, T5lI, T55E, T5gE, T2Gs, T3hI;
 E T31E, T3cE, T3sQ, T3Tk, T3Dg, T3Og, T44I, T4K6, T4u2, T4F2, TNX, T2pZ, T2v3, T1Dl, T1On;
@@ -39639,12 +39638,6 @@ io[WS(os, 999)] = FMA(KP988257567, T2gA, T2gz);
 ro[WS(os, 999)] = FMA(KP988257567, T2gG, T2gF);
 }
 }
-ri = ri + ivs;
-ii = ii + ivs;
-ro = ro + ovs;
-io = io + ovs;
-MAKE_VOLATILE_STRIDE(4096, is);
-MAKE_VOLATILE_STRIDE(4096, os);
 }
 }
 }
