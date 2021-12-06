@@ -16,7 +16,7 @@ void avx2_c2c_gather(int fft_size, int batch_size, __m256 *simd_arr,
     for (unsigned j = 0; j < num_floats; j++) {
       float *ptr = in_data + j + i * num_floats * nvec_256;
       simd_arr[j + i * num_floats] =
-          _mm256_i32gather_ps(static_cast<void *>(ptr), vIdx, 4);
+          _mm256_i32gather_ps(static_cast<float *>(ptr), vIdx, 4);
     }
 }
 
