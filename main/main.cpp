@@ -53,13 +53,11 @@ int main(int argc, char *argv[])
   avx512_scatter(fft_size, batch_size, xf, &out_array[0]);
 
   for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
-    if ((out_array[i] != xf_fftw[i / 2][0]) ||
-        (out_array[i + 1] != xf_fftw[i / 2][1])) {
-      std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i]
-                << ", complex: " << out_array[i + 1] << "\n";
-      std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i / 2][0]
-                << ", complex: " << xf_fftw[i / 2][1] << "\n\n";
-    }
+    assert( std::abs(out_array[i] - xf_fftw[i / 2][0]) < 1e-4 && std::abs(out_array[i + 1] - xf_fftw[i / 2][1]) < 1e-4 );
+    std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i]
+              << ", complex: " << out_array[i + 1] << "\n";
+    std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i / 2][0]
+              << ", complex: " << xf_fftw[i / 2][1] << "\n\n";
   }
 
   return 0;
