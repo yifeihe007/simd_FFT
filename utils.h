@@ -22,7 +22,7 @@ void avx512_c2c_gather(int fft_size, int batch_size, __m512 *simd_arr,
                        float *in_data);
 void avx512_c2c_scatter(int fft_size, int batch_size, __m512 *simd_arr,
                         float *out_data);
-void AVX2DFTc2c(const __m512 *realInput, const __m512 *imaginaryInput,
+void AVX512DFTc2c(const __m512 *realInput, const __m512 *imaginaryInput,
                 __m512 *realOutput, __m512 *imaginaryOutput, int inputstride,
                 int outputStride, int batch_size, int batchStrideIn,
                 int batchStrideOut, int fft_size);
