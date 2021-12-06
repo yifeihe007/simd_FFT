@@ -97,7 +97,7 @@ void AVX2DFTc2c(const __m256 *realInput, const __m256 *imaginaryInput,
     foo(realInput, imaginaryInput, realOutput, imaginaryOutput, inputstride,
         outputStride, 1, batchStrideIn, batchStrideOut);
 }
-
+#undef DK
 #endif
 
 #if defined(__AVX512F__)
@@ -192,5 +192,5 @@ void AVX512DFTc2c(const __m512 *realInput, const __m512 *imaginaryInput,
     foo(realInput, imaginaryInput, realOutput, imaginaryOutput, inputstride,
         outputStride, 1, batchStrideIn, batchStrideOut);
 }
-
+#undef DK
 #endif

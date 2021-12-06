@@ -403,7 +403,6 @@ TEST(TestDFT, AVX2c2c) {
   ::free(xf);
   ::free(xt);
 }
-#undef DK
 #endif
 
 #if defined(__AVX512F__)
@@ -610,8 +609,8 @@ TEST(TestDFT, correctness_fftw) {
 
   std::vector<float> out_array(2 * fft_size * batch_size);
   avx512_c2c_gather(fft_size, batch_size, xt, &values[0]);
-  m512::dft_codelet_c2cf_32(xt, xt + 1, xf, xf + 1, 2, 2, batch_size / 16,
-                            (2 * fft_size), (2 * fft_size));
+  AVX512DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, batch_size, (2 * fft_size),
+               (2 * fft_size), fft_size);
 
   avx512_c2c_scatter(fft_size, batch_size, xf, &out_array[0]);
 
@@ -626,7 +625,6 @@ TEST(TestDFT, correctness_fftw) {
   }
 }
 
-#undef DK
 #endif
 
 int main(int argc, char **argv) {
