@@ -93,9 +93,14 @@ void AVX2DFTc2c(const __m256 *realInput, const __m256 *imaginaryInput,
     foo = &(m256::dft_codelet_c2cf_1024);
     break;
   }
-  for (int i = 0; i < batch_size / nvec_256; i++)
+  for (int i = 0; i < batch_size / nvec_256; i++) {
     foo(realInput, imaginaryInput, realOutput, imaginaryOutput, inputstride,
         outputStride, 1, batchStrideIn, batchStrideOut);
+    realInput = realInput + batchStrideIn;
+    imaginaryInput = imaginaryInput + batchStrideIn;
+    imaginaryOutput = imaginaryOutput + batchStrideOut;
+    imaginaryOutput = imaginaryOutput + batchStrideOut;
+  }
 }
 #undef DK
 #endif
@@ -188,9 +193,14 @@ void AVX512DFTc2c(const __m512 *realInput, const __m512 *imaginaryInput,
     foo = &(m512::dft_codelet_c2cf_1024);
     break;
   }
-  for (int i = 0; i < batch_size / nvec_512; i++)
+  for (int i = 0; i < batch_size / nvec_512; i++) {
     foo(realInput, imaginaryInput, realOutput, imaginaryOutput, inputstride,
         outputStride, 1, batchStrideIn, batchStrideOut);
+    realInput = realInput + batchStrideIn;
+    imaginaryInput = imaginaryInput + batchStrideIn;
+    imaginaryOutput = imaginaryOutput + batchStrideOut;
+    imaginaryOutput = imaginaryOutput + batchStrideOut;
+  }
 }
 #undef DK
 #endif
