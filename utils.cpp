@@ -198,7 +198,7 @@ void AVX512DFTc2c(const __m512 *realInput, const __m512 *imaginaryInput,
         outputStride, 1, batchStrideIn, batchStrideOut);
     realInput = realInput + batchStrideIn;
     imaginaryInput = imaginaryInput + batchStrideIn;
-    imaginaryOutput = imaginaryOutput + batchStrideOut;
+    realOutput = realOutput + batchStrideOut;
     imaginaryOutput = imaginaryOutput + batchStrideOut;
   }
 }

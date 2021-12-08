@@ -623,6 +623,11 @@ TEST(TestDFT, correctness_fftw) {
                 << ", complex: " << xf_fftw[i / 2][1] << "\n\n";
     }
   }
+
+  ::free(xf);
+  ::free(xt);
+  fftwf_free(xt_fftw);
+  fftwf_free(xf_fftw);
 }
 
 #endif
