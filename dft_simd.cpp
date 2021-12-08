@@ -367,7 +367,8 @@ TEST(TestDFT, AVX2c2c) {
 
   using namespace std::chrono;
   high_resolution_clock::time_point iStart = high_resolution_clock::now();
-  avx2_c2c_gather(nsamp, nloop, xt, &values[0]);
+  for (int i = 0; i < Iter; i++)
+    avx2_c2c_gather(nsamp, nloop, xt, &values[0]);
   /*__m256i vIdx = _mm256_set_epi32(num * 7, num * 6, num * 5, num * 4, num * 3,
                                   num * 2, num, 0);
   for (unsigned i = 0; i < nloop / nvec; i++)
@@ -378,11 +379,11 @@ TEST(TestDFT, AVX2c2c) {
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
 
-  for (int i = 0; i < Iter; i++) {
+  for (int i = 0; i < Iter; i++)
     AVX2DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, nloop, num, num, nsamp);
-  }
   high_resolution_clock::time_point afterCodelet = high_resolution_clock::now();
-  avx2_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
+  for (int i = 0; i < Iter; i++)
+    avx2_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
   /*
     for (unsigned i = 0; i < nloop / nvec; i++)
       for (unsigned j = 0; j < num; j++)
@@ -403,6 +404,71 @@ TEST(TestDFT, AVX2c2c) {
   ::free(xf);
   ::free(xt);
 }
+
+
+TEST(TestDFT, correctness_fftw_avx2) {
+  // c2c
+  int fft_size_init[6] = {32, 64, 128, 256, 512, 1024};
+  int batch_size_init[6] = {32, 64, 128, 256, 512, 1024};
+  for (int i = 0; i < sizeof(fft_size_init) / sizeof(fft_size_init[0]); i++)
+    for (int j = 0; j < sizeof(batch_size_init) / sizeof(batch_size_init[0]);
+         j++) {
+      int fft_size = fft_size_init[i];
+      int batch_size = batch_size_init[j];
+      __m256 *xt = nullptr;
+      __m256 *xf = nullptr;
+      size_t byte_size = 2 * fft_size * batch_size * sizeof(float);
+
+      ::posix_memalign((void **)(&xt), 32, byte_size);
+      ::posix_memalign((void **)(&xf), 32, byte_size);
+
+      std::random_device rd;
+      std::mt19937 generator(rd());
+      std::uniform_real_distribution<float> dist(-10.0, 10.0);
+      // Store values in vector
+      std::vector<float> values(2 * fft_size * batch_size);
+      for (int i = 0; i < values.size(); ++i) {
+        values[i] = dist(generator);
+      }
+      fftwf_complex *xt_fftw = fftwf_alloc_complex(fft_size * batch_size);
+      fftwf_complex *xf_fftw = fftwf_alloc_complex(fft_size * batch_size);
+
+      fftwf_plan plan = fftwf_plan_many_dft(
+          1, &fft_size, batch_size, xt_fftw, &fft_size, 1, fft_size, xf_fftw,
+          &fft_size, 1, fft_size, FFTW_FORWARD, FFTW_MEASURE);
+
+      for (int i = 0; i < values.size(); i += 2) {
+        xt_fftw[i / 2][0] = values[i];
+        xt_fftw[i / 2][1] = values[i + 1];
+      }
+
+      fftwf_execute(plan);
+
+      std::vector<float> out_array(2 * fft_size * batch_size);
+      avx2_c2c_gather(fft_size, batch_size, xt, &values[0]);
+      AVX2DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, batch_size, (2 * fft_size),
+                   (2 * fft_size), fft_size);
+
+      avx2_c2c_scatter(fft_size, batch_size, xf, &out_array[0]);
+
+      for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
+        if (std::abs(out_array[i] - xf_fftw[i / 2][0]) > 1e-3 ||
+            std::abs(out_array[i + 1] - xf_fftw[i / 2][1]) > 1e-3) {
+          std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i]
+                    << ", complex: " << out_array[i + 1] << "\n";
+          std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i / 2][0]
+                    << ", complex: " << xf_fftw[i / 2][1] << "\n\n";
+        }
+      }
+
+      ::free(xf);
+      ::free(xt);
+      fftwf_free(xt_fftw);
+      fftwf_free(xf_fftw);
+    }
+}
+
+
 #endif
 
 #if defined(__AVX512F__)
@@ -544,15 +610,17 @@ TEST(TestDFT, AVX512c2c) {
 
   using namespace std::chrono;
   high_resolution_clock::time_point iStart = high_resolution_clock::now();
-  avx512_c2c_gather(nsamp, nloop, xt, &values[0]);
+  for (int i = 0; i < Iter; i++)
+    avx512_c2c_gather(nsamp, nloop, xt, &values[0]);
 
   high_resolution_clock::time_point afterGather = high_resolution_clock::now();
 
-  for (int i = 0; i < Iter; i++) {
+  for (int i = 0; i < Iter; i++)
     AVX512DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, nloop, num, num, nsamp);
-  }
+
   high_resolution_clock::time_point afterCodelet = high_resolution_clock::now();
-  avx512_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
+  for (int i = 0; i < Iter; i++)
+    avx512_c2c_scatter(nsamp, nloop, xf, &out_array[0]);
 
   /*for (unsigned i = 0; i < nloop / nvec_512; i++)
     for (unsigned j = 0; j < num; j++)
@@ -572,6 +640,68 @@ TEST(TestDFT, AVX512c2c) {
 
   ::free(xf);
   ::free(xt);
+}
+
+TEST(TestDFT, correctness_fftw_avx512) {
+  // c2c
+  int fft_size_init[6] = {32, 64, 128, 256, 512, 1024};
+  int batch_size_init[6] = {32, 64, 128, 256, 512, 1024};
+  for (int i = 0; i < sizeof(fft_size_init) / sizeof(fft_size_init[0]); i++)
+    for (int j = 0; j < sizeof(batch_size_init) / sizeof(batch_size_init[0]);
+         j++) {
+      int fft_size = fft_size_init[i];
+      int batch_size = batch_size_init[j];
+      __m512 *xt = nullptr;
+      __m512 *xf = nullptr;
+      size_t byte_size = 2 * fft_size * batch_size * sizeof(float);
+
+      ::posix_memalign((void **)(&xt), 64, byte_size);
+      ::posix_memalign((void **)(&xf), 64, byte_size);
+
+      std::random_device rd;
+      std::mt19937 generator(rd());
+      std::uniform_real_distribution<float> dist(-10.0, 10.0);
+      // Store values in vector
+      std::vector<float> values(2 * fft_size * batch_size);
+      for (int i = 0; i < values.size(); ++i) {
+        values[i] = dist(generator);
+      }
+      fftwf_complex *xt_fftw = fftwf_alloc_complex(fft_size * batch_size);
+      fftwf_complex *xf_fftw = fftwf_alloc_complex(fft_size * batch_size);
+
+      fftwf_plan plan = fftwf_plan_many_dft(
+          1, &fft_size, batch_size, xt_fftw, &fft_size, 1, fft_size, xf_fftw,
+          &fft_size, 1, fft_size, FFTW_FORWARD, FFTW_MEASURE);
+
+      for (int i = 0; i < values.size(); i += 2) {
+        xt_fftw[i / 2][0] = values[i];
+        xt_fftw[i / 2][1] = values[i + 1];
+      }
+
+      fftwf_execute(plan);
+
+      std::vector<float> out_array(2 * fft_size * batch_size);
+      avx512_c2c_gather(fft_size, batch_size, xt, &values[0]);
+      AVX512DFTc2c(xt, xt + 1, xf, xf + 1, 2, 2, batch_size, (2 * fft_size),
+                   (2 * fft_size), fft_size);
+
+      avx512_c2c_scatter(fft_size, batch_size, xf, &out_array[0]);
+
+      for (int i = 0; i < 2 * fft_size * batch_size; i += 2) {
+        if (std::abs(out_array[i] - xf_fftw[i / 2][0]) > 1e-3 ||
+            std::abs(out_array[i + 1] - xf_fftw[i / 2][1]) > 1e-3) {
+          std::cerr << "ours[" << i / 2 << "]\t Real: " << out_array[i]
+                    << ", complex: " << out_array[i + 1] << "\n";
+          std::cerr << "FFTW[" << i / 2 << "]\t Real: " << xf_fftw[i / 2][0]
+                    << ", complex: " << xf_fftw[i / 2][1] << "\n\n";
+        }
+      }
+
+      ::free(xf);
+      ::free(xt);
+      fftwf_free(xt_fftw);
+      fftwf_free(xf_fftw);
+    }
 }
 
 TEST(TestDFT, correctness_fftw) {

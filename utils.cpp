@@ -96,9 +96,13 @@ void AVX2DFTc2c(const __m256 *realInput, const __m256 *imaginaryInput,
   for (int i = 0; i < batch_size / nvec_256; i++) {
     foo(realInput, imaginaryInput, realOutput, imaginaryOutput, inputstride,
         outputStride, 1, batchStrideIn, batchStrideOut);
+#pragma omp atomic
     realInput = realInput + batchStrideIn;
+#pragma omp atomic
     imaginaryInput = imaginaryInput + batchStrideIn;
-    imaginaryOutput = imaginaryOutput + batchStrideOut;
+#pragma omp atomic
+    realOutput = realOutput + batchStrideOut;
+#pragma omp atomic
     imaginaryOutput = imaginaryOutput + batchStrideOut;
   }
 }
@@ -193,12 +197,17 @@ void AVX512DFTc2c(const __m512 *realInput, const __m512 *imaginaryInput,
     foo = &(m512::dft_codelet_c2cf_1024);
     break;
   }
+#pragma omp parallel for
   for (int i = 0; i < batch_size / nvec_512; i++) {
     foo(realInput, imaginaryInput, realOutput, imaginaryOutput, inputstride,
         outputStride, 1, batchStrideIn, batchStrideOut);
+#pragma omp atomic
     realInput = realInput + batchStrideIn;
+#pragma omp atomic
     imaginaryInput = imaginaryInput + batchStrideIn;
+#pragma omp atomic
     realOutput = realOutput + batchStrideOut;
+#pragma omp atomic
     imaginaryOutput = imaginaryOutput + batchStrideOut;
   }
 }
